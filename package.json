@@ -1,0 +1,32 @@
+{
+  "name": "stackmatch-workspace",
+  "version": "1.0.0",
+  "description": "StackMatch - Professional AI-powered product discussion and project planning platform",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:mobile": "npm --prefix apps/mobile run start",
+    "build:types": "npm --prefix packages/types run build",
+    "build:web": "npm --prefix apps/web run build",
+    "build:backend": "npm --prefix backend run build",
+    "build": "npm run build:types && npm run build:backend && npm run build:web",
+    "test:backend": "npm --prefix backend test",
+    "test": "npm run test:backend"
+  },
+  "keywords": [
+    "stackmatch",
+    "product-planning",
+    "architecture",
+    "roadmap",
+    "tech-stack"
+  ],
+  "author": "StackMatch Team",
+  "license": "ISC"
+}

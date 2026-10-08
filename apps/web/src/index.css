@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-dark: #111827;
+    --color-slate: #374151;
+    --color-muted: #687280;
+    --color-gray: #9CA3AF;
+    --color-border: #D1D5DB;
+    --color-bg: #F9FAFB;
+    --color-white: #FFFFFF;
+  }
+
+  body {
+    background-color: #F9FAFB;
+    color: #111827;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Subtle transitions */
+.transition-subtle {
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
