@@ -137,10 +137,53 @@ const runTests = async () => {
     const roadRes = await request('GET', `/api/v1/projects/${newProjectId}/roadmap`);
     assert(roadRes.status === 200 && roadRes.data?.data?.length === 4, 'GET /api/v1/projects/:id/roadmap returns 4 development phases');
 
+    // 14. Phase 8 Live Dynamic Blueprint test
     const blueprintRes = await request('GET', `/api/v1/projects/${newProjectId}/blueprint`);
-    assert(blueprintRes.status === 200 && blueprintRes.data?.data?.sections?.length > 0, 'GET /api/v1/projects/:id/blueprint returns blueprint preview data');
+    assert(
+      blueprintRes.status === 200 &&
+      blueprintRes.data?.data?.sections?.length > 0 &&
+      Array.isArray(blueprintRes.data?.data?.requirements) &&
+      Array.isArray(blueprintRes.data?.data?.technologies) &&
+      Array.isArray(blueprintRes.data?.data?.checklist) &&
+      blueprintRes.data?.data?.checklist.length === 10,
+      'GET /api/v1/projects/:id/blueprint returns live dynamic blueprint with tech stack, requirements, and checklist'
+    );
 
-    // 14. Phase 5 Project Context Engine test
+    // 15. Phase 8 Rich Project Creation CRUD test
+    const richProjectRes = await request('POST', '/api/v1/projects', {
+      name: 'OmniDesk Customer Portal',
+      description: 'Unified customer ticket and helpdesk portal.',
+      problemStatement: 'SaaS customers suffer from fragmented email support with zero SLA tracking.',
+      category: 'Customer Support SaaS',
+      primaryUsers: ['Support Agents', 'Team Leads', 'Enterprise Clients'],
+      goals: ['Achieve <1h response SLA', 'Automate ticket routing with tagging'],
+      initialRequirements: [
+        {
+          title: 'Ticket Queue Management',
+          description: 'Sort and filter inbound tickets by priority and SLA countdown.',
+          type: 'functional',
+          priority: 'high',
+          category: 'Core Workflow'
+        }
+      ]
+    }, authToken);
+    assert(
+      richProjectRes.status === 201 &&
+      richProjectRes.data?.data?.problemStatement === 'SaaS customers suffer from fragmented email support with zero SLA tracking.' &&
+      richProjectRes.data?.data?.category === 'Customer Support SaaS',
+      'POST /api/v1/projects creates rich project with problem statement, category, and initial requirements'
+    );
+    const richProjId = richProjectRes.data?.data?.id;
+
+    // Verify rich project requirements were created
+    const richReqsRes = await request('GET', `/api/v1/projects/${richProjId}/requirements`);
+    assert(
+      richReqsRes.status === 200 &&
+      richReqsRes.data?.data?.some((r: any) => r.title === 'Ticket Queue Management'),
+      'GET /api/v1/projects/:id/requirements retrieves custom initial requirements from project creation'
+    );
+
+    // 16. Phase 5 Project Context Engine test
     const contextRes = await request('GET', `/api/v1/projects/${newProjectId}/context`);
     assert(
       contextRes.status === 200 &&
@@ -150,7 +193,7 @@ const runTests = async () => {
       'GET /api/v1/projects/:id/context synthesizes structured project context and complexity factors'
     );
 
-    // 15. Phase 5 Architecture Consistency Validation test
+    // 17. Phase 5 Architecture Consistency Validation test
     const validationRes = await request('GET', `/api/v1/projects/${newProjectId}/architecture/validate`);
     assert(
       validationRes.status === 200 &&
@@ -159,7 +202,7 @@ const runTests = async () => {
       'GET /api/v1/projects/:id/architecture/validate returns architecture health score and findings'
     );
 
-    // 16. Phase 5 Complexity and Technical Risk Insights test
+    // 18. Phase 5 Complexity and Technical Risk Insights test
     const risksRes = await request('GET', `/api/v1/projects/${newProjectId}/insights/risks`);
     assert(
       risksRes.status === 200 &&
@@ -169,7 +212,7 @@ const runTests = async () => {
       'GET /api/v1/projects/:id/insights/risks identifies bottlenecks and practical mitigations'
     );
 
-    // 17. Phase 5 Multi-Category Comparison Filtering test
+    // 19. Phase 5 Multi-Category Comparison Filtering test
     const frontendCompRes = await request('GET', `/api/v1/projects/${newProjectId}/comparisons?category=frontend`);
     assert(
       frontendCompRes.status === 200 &&
@@ -178,7 +221,7 @@ const runTests = async () => {
       'GET /api/v1/projects/:id/comparisons?category=frontend filters matrix by category'
     );
 
-    // 14. Conversation & Message post with AI intelligence
+    // 20. Conversation & Message post with AI intelligence
     const msgPostRes = await request('POST', `/api/v1/projects/${newProjectId}/messages`, {
       content: 'We need support for both web and mobile apps with UPI payments.'
     });
@@ -189,15 +232,29 @@ const runTests = async () => {
       'POST /api/v1/projects/:id/messages generates AI assistant reply, suggestions, and updates stage'
     );
 
-    // 15. Project update
+    // 21. Project update with persistence
     const updateRes = await request('PATCH', `/api/v1/projects/${newProjectId}`, {
-      status: 'in-progress'
+      name: 'Smart Campus Shuttle Pro',
+      status: 'in-progress',
+      summary: { estimatedComplexity: 'High' }
     });
-    assert(updateRes.status === 200 && updateRes.data?.data?.status === 'in-progress', 'PATCH /api/v1/projects/:id updates project');
+    assert(
+      updateRes.status === 200 &&
+      updateRes.data?.data?.name === 'Smart Campus Shuttle Pro' &&
+      updateRes.data?.data?.status === 'in-progress' &&
+      updateRes.data?.data?.summary?.estimatedComplexity === 'High',
+      'PATCH /api/v1/projects/:id updates project details and persists summary fields'
+    );
 
-    // 16. Project deletion
+    // 22. Project deletion & cascade verification
     const deleteRes = await request('DELETE', `/api/v1/projects/${newProjectId}`);
     assert(deleteRes.status === 200, 'DELETE /api/v1/projects/:id deletes project');
+
+    const checkDeletedRes = await request('GET', `/api/v1/projects/${newProjectId}`);
+    assert(checkDeletedRes.status === 404, 'GET /api/v1/projects/:id returns 404 for deleted project');
+
+    // Clean up rich project
+    await request('DELETE', `/api/v1/projects/${richProjId}`);
 
     console.log(`\nTests Completed: ${passed} passed, ${failed} failed`);
   } catch (err) {

@@ -32,6 +32,7 @@ import { RoadmapTimeline } from '../components/domain/RoadmapTimeline';
 import { ResourceCard } from '../components/domain/ResourceCard';
 import { EditRequirementModal } from '../components/domain/EditRequirementModal';
 import { ExportBlueprintModal } from '../components/domain/ExportBlueprintModal';
+import { DynamicBlueprintDocument } from '../components/domain/DynamicBlueprintDocument';
 import { useToast } from '../components/ui/Toast';
 import {
   Project,
@@ -67,6 +68,8 @@ export interface ProjectOverviewPageProps {
   onUpdateRequirement?: (updatedReq: Partial<Requirement> & { id: string }) => Promise<void>;
   onDeleteRequirement?: (requirementId: string) => Promise<void>;
   onAddRequirement?: (newReq: Omit<Requirement, 'id' | 'projectId'>) => Promise<void>;
+  onEditProject?: (project: Project) => void;
+  onDeleteProject?: (project: Project) => void;
   onNavigateConnect?: () => void;
 }
 
@@ -89,6 +92,8 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   onUpdateRequirement,
   onDeleteRequirement,
   onAddRequirement,
+  onEditProject,
+  onDeleteProject,
   onNavigateConnect,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -168,7 +173,18 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
             </div>
 
             {/* Header Action Buttons */}
-            <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0 flex-wrap">
+              {onEditProject && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs font-semibold"
+                  leftIcon={<Edit3 className="w-4 h-4 text-[#374151]" />}
+                  onClick={() => onEditProject(project)}
+                >
+                  Edit Project
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
@@ -974,105 +990,20 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 9. BLUEPRINT PREVIEW TAB */}
         {activeTab === 'blueprint' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-[#111827]">Final Project Blueprint</h2>
-                <p className="text-xs text-[#687280]">
-                  Complete project requirements, technology recommendations, architecture and development roadmap.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="highlight">Approved Spec</Badge>
-                <Button
-                  variant="primary"
-                  size="md"
-                  leftIcon={<FileCheck className="w-4 h-4" />}
-                  onClick={() => setIsExportModalOpen(true)}
-                >
-                  Export Blueprint
-                </Button>
-              </div>
-            </div>
+          <div className="space-y-8 animate-in fade-in duration-200">
+            <DynamicBlueprintDocument
+              project={project}
+              blueprint={blueprint}
+              requirements={requirements}
+              technologies={technologies}
+              architectureNodes={architectureNodes}
+              roadmapPhases={roadmapPhases}
+              resources={resources}
+              onOpenExportModal={() => setIsExportModalOpen(true)}
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Document Preview Sheet */}
-              <div className="lg:col-span-2 bg-white rounded-2xl border border-[#D1D5DB] shadow-lg p-8 sm:p-10 font-sans space-y-6">
-                <div className="border-b border-[#E5E7EB] pb-5 flex justify-between items-start">
-                  <div>
-                    <span className="text-[10px] font-bold text-[#687280] uppercase tracking-wider block">
-                      StackMatch Engineering Blueprint
-                    </span>
-                    <h3 className="text-2xl font-black text-[#111827] mt-1">{blueprint.projectName}</h3>
-                    <p className="text-xs text-[#687280] mt-0.5">Version: {blueprint.version} • {blueprint.generatedDate}</p>
-                  </div>
-                  <Badge variant="highlight">Approved Spec</Badge>
-                </div>
-
-                {/* Blueprint Sections Summary */}
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold text-[#111827] uppercase tracking-wider">
-                    Executive Document Contents
-                  </h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    {blueprint.sections.map((sec, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-start justify-between gap-3"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#111827]">{idx + 1}. {sec.title}</span>
-                          </div>
-                          <p className="text-xs text-[#687280] mt-0.5">{sec.description}</p>
-                        </div>
-                        <Badge variant="success" size="sm">Ready</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* What's Included Card */}
-              <Card className="h-fit space-y-4">
-                <h4 className="text-sm font-bold text-[#111827]">What's Included</h4>
-                <div className="space-y-2.5 text-xs text-[#374151]">
-                  {[
-                    'Project Overview & Executive Summary',
-                    'Requirements Analysis (Functional & Non-Functional)',
-                    'User Roles & Security Permissions',
-                    'Feature Matrix with Acceptance Criteria',
-                    'Technology Stack Justification & Trade-offs',
-                    'System Architecture Visual Topography',
-                    '4-Phase Development Milestones',
-                    'Security & Compliance Safeguards',
-                    'Curated Implementation Resources',
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4 border-t border-[#F3F4F6]">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full text-xs font-semibold"
-                    onClick={() => setIsExportModalOpen(true)}
-                  >
-                    Export Blueprint
-                  </Button>
-                  <p className="text-[10px] text-center text-[#9CA3AF] mt-2">
-                    Print to PDF, Markdown (.md), or JSON Specification (.json)
-                  </p>
-                </div>
-              </Card>
-            </div>
-
-            {/* Contextual Connect with Freelancers Preview (Prompt Section 3 & 6) */}
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+            {/* Contextual Connect with Freelancers Preview */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6 print:hidden">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0 mt-0.5">
                   <Users className="w-5 h-5" />

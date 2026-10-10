@@ -115,25 +115,54 @@ class InMemoryStore {
     return this.projects.get(id) || null;
   }
 
-  public async createProject(userId: string, name: string, description: string = ''): Promise<Project> {
+  public async createProject(
+    userId: string,
+    name: string,
+    description: string = '',
+    options?: {
+      problemStatement?: string;
+      category?: string;
+      primaryUsers?: string[];
+      goals?: string[];
+      objectives?: string[];
+      initialRequirements?: Array<{
+        title: string;
+        description: string;
+        type?: 'functional' | 'non-functional';
+        priority?: 'high' | 'medium' | 'low';
+        category?: string;
+      }>;
+      status?: 'draft' | 'in-progress' | 'completed';
+    }
+  ): Promise<Project> {
     const id = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
+    const primaryUsers = options?.primaryUsers && options.primaryUsers.length > 0
+      ? options.primaryUsers
+      : ['End Users', 'Administrators'];
+    const goals = options?.goals || options?.objectives || ['Launch minimum viable product', 'Validate key user journeys'];
+
     const newProject: Project = {
       id,
       userId,
       name,
       description,
-      status: 'draft',
+      category: options?.category || 'Web Application',
+      problemStatement: options?.problemStatement || description,
+      status: (options?.status as any) || 'draft',
       currentStage: 'idea',
       summary: {
-        projectType: 'Web & Mobile Application',
-        primaryUsers: ['End Users', 'Administrators'],
-        industry: 'Software',
+        projectType: options?.category || 'Web & Mobile Application',
+        primaryUsers,
+        industry: options?.category || 'Software',
         keyFeatures: ['User Onboarding', 'Core Workflow', 'Analytics Dashboard'],
         estimatedComplexity: 'Medium',
         estimatedTimeline: '2–4 months',
-        goals: ['Launch minimum viable product', 'Validate key user journeys'],
-        targetAudience: ['Target Customers', 'Operations Team']
+        goals,
+        targetAudience: primaryUsers,
+        problemStatement: options?.problemStatement || description,
+        category: options?.category || 'Web Application',
+        objectives: goals
       },
       createdAt: now,
       updatedAt: now
@@ -158,39 +187,49 @@ class InMemoryStore {
     };
     this.conversations.set(id, [initialMessage]);
 
-    // Seed cloned defaults for tech stack, roadmap, architecture, etc.
-    this.requirements.set(id, [
-      {
-        id: `req_${Date.now()}_1`,
+    // Initial requirements
+    if (options?.initialRequirements && options.initialRequirements.length > 0) {
+      const customReqs = options.initialRequirements.map((r, idx) => ({
+        id: `req_${Date.now()}_${idx + 1}`,
         projectId: id,
-        title: 'Core Authentication & Permissions',
-        description: 'Secure token authentication for regular users and administrative roles.',
-        type: 'functional',
-        priority: 'high',
-        category: 'Security'
-      },
-      {
-        id: `req_${Date.now()}_2`,
-        projectId: id,
-        title: 'Primary User Workflow',
-        description: 'Guided flow allowing users to submit actions and view progress.',
-        type: 'functional',
-        priority: 'high',
-        category: 'Operations'
-      }
-    ]);
+        title: r.title,
+        description: r.description,
+        type: (r.type as any) || 'functional',
+        priority: (r.priority as any) || 'high',
+        category: r.category || 'Core Scope',
+        isMvpScope: true
+      }));
+      this.requirements.set(id, customReqs);
+    } else {
+      this.requirements.set(id, [
+        {
+          id: `req_${Date.now()}_1`,
+          projectId: id,
+          title: 'Core Authentication & Permissions',
+          description: 'Secure token authentication for regular users and administrative roles.',
+          type: 'functional',
+          priority: 'high',
+          category: 'Security',
+          isMvpScope: true
+        },
+        {
+          id: `req_${Date.now()}_2`,
+          projectId: id,
+          title: 'Primary User Workflow',
+          description: 'Guided flow allowing users to submit actions and view progress.',
+          type: 'functional',
+          priority: 'high',
+          category: 'Operations',
+          isMvpScope: true
+        }
+      ]);
+    }
+
     this.technologies.set(id, [...sampleTechnologies]);
     this.comparisons.set(id, { ...sampleComparisons });
     this.architectures.set(id, [...sampleArchitecture]);
     this.roadmaps.set(id, [...sampleRoadmap]);
     this.resources.set(id, [...sampleResources]);
-    this.blueprints.set(id, {
-      projectId: id,
-      projectName: name,
-      generatedDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      version: '1.0.0-PROPOSAL',
-      sections: sampleBlueprint.sections
-    });
 
     return newProject;
   }
@@ -198,9 +237,17 @@ class InMemoryStore {
   public async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
     const existing = this.projects.get(id);
     if (!existing) return null;
+
+    const mergedSummary = updates.summary
+      ? { ...existing.summary, ...updates.summary }
+      : existing.summary;
+
     const updated: Project = {
       ...existing,
       ...updates,
+      category: updates.category || updates.summary?.category || existing.category,
+      problemStatement: updates.problemStatement || updates.summary?.problemStatement || existing.problemStatement,
+      summary: mergedSummary,
       updatedAt: new Date().toISOString()
     };
     this.projects.set(id, updated);
@@ -332,7 +379,99 @@ class InMemoryStore {
   }
 
   public async getBlueprint(projectId: string): Promise<ProjectBlueprint | null> {
-    return this.blueprints.get(projectId) || null;
+    const project = this.projects.get(projectId);
+    if (!project) return null;
+
+    const reqs = this.requirements.get(projectId) || [];
+    const techs = this.technologies.get(projectId) || [];
+    const arch = this.architectures.get(projectId) || [];
+    const roadmap = this.roadmaps.get(projectId) || [];
+    const resources = this.resources.get(projectId) || [];
+
+    const checklist = [
+      { id: 'chk_1', category: 'Scope & Requirements', title: 'Functional requirements scoped and prioritized', completed: reqs.length > 0 },
+      { id: 'chk_2', category: 'Scope & Requirements', title: 'Target users & role-based permissions documented', completed: (project.summary?.primaryUsers?.length || 0) > 0 },
+      { id: 'chk_3', category: 'Architecture', title: 'Multi-tier system topology & components defined', completed: arch.length > 0 },
+      { id: 'chk_4', category: 'Architecture', title: 'Technology selections approved with suitability scores', completed: techs.length > 0 },
+      { id: 'chk_5', category: 'Security', title: 'Token auth & secret protection strategy established', completed: true },
+      { id: 'chk_6', category: 'Roadmap', title: 'Phase-by-phase delivery milestones & timelines mapped', completed: roadmap.length > 0 },
+      { id: 'chk_7', category: 'Quality & Testing', title: 'Acceptance criteria defined for critical user stories', completed: reqs.some(r => r.acceptanceCriteria && r.acceptanceCriteria.length > 0) },
+      { id: 'chk_8', category: 'Operations', title: 'Deployment environment & container strategy specified', completed: true },
+      { id: 'chk_9', category: 'Risk Mitigation', title: 'Technical bottlenecks and mitigations cataloged', completed: true },
+      { id: 'chk_10', category: 'Team Readiness', title: 'Official documentation and learning guides curated', completed: resources.length > 0 }
+    ];
+
+    const dynamicSections = [
+      {
+        title: 'Project Overview & Executive Summary',
+        description: project.description || 'Comprehensive executive brief outlining product mission and delivery window.',
+        status: 'ready' as const
+      },
+      {
+        title: 'Problem Statement & Target Users',
+        description: project.problemStatement || project.summary?.problemStatement || `Targeted towards: ${(project.summary?.primaryUsers || ['End Users']).join(', ')}`,
+        status: 'ready' as const
+      },
+      {
+        title: 'Requirements & Acceptance Criteria',
+        description: `${reqs.length} scoped requirements (${reqs.filter(r => r.type === 'functional').length} functional, ${reqs.filter(r => r.type === 'non-functional').length} non-functional).`,
+        status: 'ready' as const
+      },
+      {
+        title: 'Selected Technology Stack & Rationale',
+        description: `${techs.length} curated technologies with suitability scores and integration guidance.`,
+        status: 'ready' as const
+      },
+      {
+        title: 'System Architecture Topography',
+        description: `${arch.length} structural tiers spanning client, API, data persistence, and external services.`,
+        status: 'ready' as const
+      },
+      {
+        title: 'Sequential Development Roadmap',
+        description: `${roadmap.length} delivery phases with measurable acceptance criteria and milestone prerequisites.`,
+        status: 'ready' as const
+      },
+      {
+        title: 'Technical Risks & Mitigations',
+        description: 'Comprehensive bottleneck analysis with practical engineering safeguards.',
+        status: 'ready' as const
+      },
+      {
+        title: 'Official Learning Resources',
+        description: `${resources.length} verified documentation links and engineering guides.`,
+        status: 'ready' as const
+      },
+      {
+        title: 'Implementation Readiness Checklist',
+        description: `${checklist.filter(c => c.completed).length} of ${checklist.length} production readiness criteria verified.`,
+        status: 'ready' as const
+      }
+    ];
+
+    const dynamicBlueprint: ProjectBlueprint = {
+      projectId,
+      projectName: project.name,
+      description: project.description,
+      problemStatement: project.problemStatement || project.summary?.problemStatement || 'Not specified',
+      category: project.category || project.summary?.category || project.summary?.industry || 'Web Application',
+      objectives: project.summary?.goals || project.summary?.objectives || ['Launch minimum viable product'],
+      targetAudience: project.summary?.targetAudience || project.summary?.primaryUsers || ['General Users'],
+      primaryUsers: project.summary?.primaryUsers || ['End Users'],
+      summary: project.summary,
+      requirements: reqs,
+      technologies: techs,
+      architectureNodes: arch,
+      roadmapPhases: roadmap,
+      resources,
+      checklist,
+      sections: dynamicSections,
+      generatedDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      version: '1.0.0-PROPOSAL',
+      lastUpdated: project.updatedAt || new Date().toISOString()
+    };
+
+    return dynamicBlueprint;
   }
 
   public async setBlueprint(projectId: string, bp: ProjectBlueprint): Promise<ProjectBlueprint> {

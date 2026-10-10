@@ -44,7 +44,17 @@ export const getProjectById = async (req: Request, res: Response) => {
 export const createProject = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id || 'usr_demo_01';
-    const { name, description } = req.body;
+    const {
+      name,
+      description,
+      problemStatement,
+      category,
+      primaryUsers,
+      goals,
+      objectives,
+      initialRequirements,
+      status
+    } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({
@@ -53,7 +63,21 @@ export const createProject = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    const project = await store.createProject(userId, name.trim(), description || '');
+    const project = await store.createProject(
+      userId,
+      name.trim(),
+      description || '',
+      {
+        problemStatement,
+        category,
+        primaryUsers,
+        goals,
+        objectives,
+        initialRequirements,
+        status
+      }
+    );
+
     return res.status(201).json({
       success: true,
       data: project

@@ -28,6 +28,9 @@ export interface ProjectSummary {
   estimatedTimeline: string;
   goals: string[];
   targetAudience: string[];
+  problemStatement?: string;
+  category?: string;
+  objectives?: string[];
   constraints?: string[];
   assumptions?: string[];
   exclusions?: string[];
@@ -41,9 +44,39 @@ export interface Project {
   description: string;
   status: ProjectStatus;
   currentStage: ProjectStage;
+  category?: string;
+  problemStatement?: string;
   summary?: ProjectSummary;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateProjectInput {
+  name: string;
+  description?: string;
+  problemStatement?: string;
+  category?: string;
+  primaryUsers?: string[];
+  goals?: string[];
+  objectives?: string[];
+  initialRequirements?: Array<{
+    title: string;
+    description: string;
+    type?: RequirementType;
+    priority?: PriorityLevel;
+    category?: string;
+  }>;
+  status?: ProjectStatus;
+}
+
+export interface UpdateProjectInput {
+  name?: string;
+  description?: string;
+  status?: ProjectStatus;
+  currentStage?: ProjectStage;
+  category?: string;
+  problemStatement?: string;
+  summary?: Partial<ProjectSummary>;
 }
 
 export interface Requirement {
@@ -235,12 +268,34 @@ export interface BlueprintSection {
   status: 'included' | 'ready';
 }
 
+export interface BlueprintChecklistItem {
+  id: string;
+  category: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface ProjectBlueprint {
   projectId: string;
   projectName: string;
   generatedDate: string;
   version: string;
   sections: BlueprintSection[];
+  description?: string;
+  problemStatement?: string;
+  category?: string;
+  objectives?: string[];
+  targetAudience?: string[];
+  primaryUsers?: string[];
+  summary?: ProjectSummary;
+  requirements?: Requirement[];
+  technologies?: Technology[];
+  architectureNodes?: ArchitectureNode[];
+  roadmapPhases?: RoadmapPhase[];
+  risks?: ProjectRiskItem[];
+  resources?: ResourceItem[];
+  checklist?: BlueprintChecklistItem[];
+  lastUpdated?: string;
 }
 
 export interface FollowUpQuestion {

@@ -111,10 +111,16 @@ class ApiClient {
     return this.request<Project>(`/projects/${id}`);
   }
 
-  public async createProject(name: string, description?: string): Promise<Project> {
+  public async createProject(
+    input: string | (Partial<Project> & { name: string }),
+    description?: string
+  ): Promise<Project> {
+    const payload = typeof input === 'string'
+      ? { name: input, description }
+      : input;
     return this.request<Project>('/projects', {
       method: 'POST',
-      body: JSON.stringify({ name, description })
+      body: JSON.stringify(payload)
     });
   }
 

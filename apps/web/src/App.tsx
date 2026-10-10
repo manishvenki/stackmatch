@@ -7,6 +7,8 @@ import { ProjectOverviewPage } from './pages/ProjectOverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ConnectFreelancersPage } from './pages/ConnectFreelancersPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { ProjectModal } from './components/domain/ProjectModal';
+import { DeleteProjectModal } from './components/domain/DeleteProjectModal';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { api } from './services/api';
 import {
@@ -37,6 +39,8 @@ import {
   ProjectBlueprint,
   ProjectContext,
   ProjectComplexityInsight,
+  CreateProjectInput,
+  UpdateProjectInput,
 } from './types';
 
 function AppContent() {
@@ -55,6 +59,14 @@ function AppContent() {
   // Auth Modal State
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
+  // Project Management Modal States (Master Prompt 08 CRUD)
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [projectModalMode, setProjectModalMode] = useState<'create' | 'edit'>('create');
+  const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   // Mobile Sidebar State
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -168,66 +180,137 @@ function AppContent() {
     }
   };
 
-  // Create New Project Flow with backend persistence
-  const handleNewProject = async () => {
-    let newProj: Project;
+  // Project CRUD Handlers (Master Prompt 08)
+  const handleOpenCreateProject = () => {
+    setProjectToEdit(null);
+    setProjectModalMode('create');
+    setProjectModalOpen(true);
+  };
+
+  const handleOpenEditProject = (proj: Project) => {
+    setProjectToEdit(proj);
+    setProjectModalMode('edit');
+    setProjectModalOpen(true);
+  };
+
+  const handleOpenDeleteProject = (proj: Project) => {
+    setProjectToDelete(proj);
+    setDeleteModalOpen(true);
+  };
+
+  const handleSaveProject = async (data: CreateProjectInput | UpdateProjectInput) => {
     try {
-      newProj = await api.createProject(
-        'New Product Concept',
-        'Describe your concept to start scoping requirements and architecture.'
-      );
-    } catch (_) {
-      const newId = `proj_${Date.now()}`;
-      newProj = {
-        id: newId,
-        userId: currentUser?.id || 'usr_demo_01',
-        name: 'New Product Concept',
-        description: 'Describe your concept to start scoping requirements and architecture.',
-        status: 'draft',
-        currentStage: 'idea',
-        summary: {
-          projectType: 'Web & Mobile Application',
-          primaryUsers: ['End Users', 'Administrators'],
-          industry: 'Software & Technology',
-          keyFeatures: ['User Onboarding', 'Core Dashboard', 'Secure API'],
-          estimatedComplexity: 'Medium',
-          estimatedTimeline: '2–4 months',
-          goals: ['Validate market demand', 'Launch production MVP'],
-          targetAudience: ['Target Users', 'Operations Team'],
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (projectModalMode === 'create') {
+        const created = await api.createProject(data as any);
+        setProjects((prev) => [created, ...prev]);
+        setActiveProject(created);
+        localStorage.setItem('sm_last_active_project_id', created.id);
+
+        try {
+          const [plan, msgs] = await Promise.all([
+            api.getProjectPlan(created.id).catch(() => null),
+            api.getMessages(created.id).catch(() => []),
+          ]);
+          if (plan) {
+            if (plan.requirements?.length) setRequirements(plan.requirements);
+            const techs = plan.technologies || (plan as any).techStack;
+            if (techs?.length) setTechnologies(techs);
+            if (plan.comparisons) setComparisons(plan.comparisons);
+            if (plan.architecture?.length) setArchitecture(plan.architecture);
+            if (plan.roadmap?.length) setRoadmap(plan.roadmap);
+            if (plan.blueprint) setBlueprint(plan.blueprint);
+            if (plan.context) setProjectContext(plan.context);
+            if (plan.validation) setValidationReport(plan.validation);
+            if (plan.risks) setComplexityInsight(plan.risks);
+          }
+          if (msgs && msgs.length > 0) {
+            setMessages(msgs);
+          } else {
+            const initialMsg: Message = {
+              id: `msg_${Date.now()}`,
+              projectId: created.id,
+              role: 'assistant',
+              content: `Welcome to StackMatch! Let's scope "${created.name}". I've initialized your architectural baseline for ${created.category || 'your project'}. Feel free to explore your dynamic blueprint or refine requirements here.`,
+              timestamp: new Date().toISOString(),
+              metadata: {
+                stage: 'idea',
+                suggestedResponses: [
+                  'Review Requirements Matrix',
+                  'Examine Technology Trade-offs',
+                  'View Dynamic Blueprint',
+                ],
+              },
+            };
+            setMessages([initialMsg]);
+          }
+        } catch (_) {}
+
+        setProjectModalOpen(false);
+        setCurrentView('overview');
+        localStorage.setItem('sm_last_view', 'overview');
+        showToast({
+          type: 'success',
+          title: 'Project Created',
+          message: `"${created.name}" is now ready for scoping and blueprint generation.`,
+        });
+      } else if (projectModalMode === 'edit' && projectToEdit) {
+        const updated = await api.updateProject(projectToEdit.id, data as any);
+        setProjects((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        if (activeProject.id === updated.id) {
+          setActiveProject(updated);
+          try {
+            const plan = await api.getProjectPlan(updated.id);
+            if (plan?.blueprint) setBlueprint(plan.blueprint);
+          } catch (_) {}
+        }
+        setProjectModalOpen(false);
+        showToast({
+          type: 'success',
+          title: 'Project Updated',
+          message: `Saved changes to "${updated.name}".`,
+        });
+      }
+    } catch (err: any) {
+      showToast({
+        type: 'error',
+        title: 'Error Saving Project',
+        message: err.message || 'Failed to save project changes.',
+      });
+      throw err;
     }
+  };
 
-    setProjects([newProj, ...projects]);
-    setActiveProject(newProj);
-    localStorage.setItem('sm_last_active_project_id', newProj.id);
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return;
+    try {
+      await api.deleteProject(projectToDelete.id);
+      const remaining = projects.filter((p) => p.id !== projectToDelete.id);
+      setProjects(remaining);
 
-    const initialMsg: Message = {
-      id: `msg_${Date.now()}`,
-      projectId: newProj.id,
-      role: 'assistant',
-      content: `Welcome to StackMatch! Tell me about "${newProj.name}" in your own words. Who is it for, and what problem does it solve?`,
-      timestamp: new Date().toISOString(),
-      metadata: {
-        stage: 'idea',
-        suggestedResponses: [
-          'An on-demand booking platform with online payments',
-          'A SaaS collaborative dashboard for distributed teams',
-          'A marketplace connecting buyers and local sellers',
-        ],
-      },
-    };
+      if (activeProject.id === projectToDelete.id) {
+        if (remaining.length > 0) {
+          await handleSelectProject(remaining[0].id);
+        } else {
+          setActiveProject(fallbackProject);
+          setProjects([fallbackProject]);
+        }
+      }
 
-    setMessages([initialMsg]);
-    setCurrentView('chat');
-    localStorage.setItem('sm_last_view', 'chat');
-    showToast({
-      type: 'info',
-      title: 'Scoping Session Started',
-      message: 'Describe your idea naturally — AI will extract requirements.',
-    });
+      showToast({
+        type: 'success',
+        title: 'Project Deleted',
+        message: `"${projectToDelete.name}" was permanently removed.`,
+      });
+      setDeleteModalOpen(false);
+      setProjectToDelete(null);
+    } catch (err: any) {
+      showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: err.message || 'Unable to delete project.',
+      });
+      throw err;
+    }
   };
 
   // Handle AI Chat Messages
@@ -452,7 +535,7 @@ function AppContent() {
         isWorkspace={isWorkspaceView}
         activeProjectName={activeProject?.name}
         onNavigate={navigateTo}
-        onNewProject={handleNewProject}
+        onNewProject={handleOpenCreateProject}
         onLogout={() => {
           setCurrentUser(null);
           api.logout();
@@ -479,7 +562,7 @@ function AppContent() {
               else if (nav === 'resources') navigateTo('resources');
               else navigateTo(nav);
             }}
-            onNewProject={handleNewProject}
+            onNewProject={handleOpenCreateProject}
             projects={projects}
             activeProjectId={activeProject.id}
             onSelectProject={handleSelectProject}
@@ -498,7 +581,7 @@ function AppContent() {
         <main className="flex-1 flex flex-col overflow-y-auto">
           {currentView === 'landing' && (
             <LandingPage
-              onStartPlanning={handleNewProject}
+              onStartPlanning={handleOpenCreateProject}
               onExploreProject={(id) => {
                 handleSelectProject(id);
                 setCurrentView('overview');
@@ -512,7 +595,9 @@ function AppContent() {
               currentUser={currentUser}
               projects={projects}
               onSelectProject={handleSelectProject}
-              onNewProject={handleNewProject}
+              onNewProject={handleOpenCreateProject}
+              onEditProject={handleOpenEditProject}
+              onDeleteProject={handleOpenDeleteProject}
               onContinueChat={(proj) => {
                 setActiveProject(proj);
                 setCurrentView('chat');
@@ -563,6 +648,8 @@ function AppContent() {
               onUpdateRequirement={handleUpdateRequirement}
               onDeleteRequirement={handleDeleteRequirement}
               onAddRequirement={handleAddRequirement as any}
+              onEditProject={handleOpenEditProject}
+              onDeleteProject={handleOpenDeleteProject}
               onNavigateConnect={() => setCurrentView('connect')}
             />
           )}
@@ -624,6 +711,22 @@ function AppContent() {
           )}
         </main>
       </div>
+
+      {/* Project Create / Edit Modal (Master Prompt 08 CRUD) */}
+      <ProjectModal
+        isOpen={projectModalOpen}
+        projectToEdit={projectToEdit}
+        onClose={() => setProjectModalOpen(false)}
+        onSubmit={handleSaveProject}
+      />
+
+      {/* Delete Project Confirmation Modal (Master Prompt 08 CRUD) */}
+      <DeleteProjectModal
+        isOpen={deleteModalOpen}
+        project={projectToDelete}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+      />
 
       {/* Auth Modal */}
       <AuthModal
