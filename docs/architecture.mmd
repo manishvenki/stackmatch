@@ -1,0 +1,40 @@
+flowchart TD
+    subgraph ClientLayer["Client Layer (Frontend)"]
+        UI["React 18 + Vite Web App<br/>(Tailwind CSS + Lucide Icons)"]
+        Doodle["Doodle Animation Engine<br/>& Loading Choreo"]
+        ErrorBound["React Error Boundary<br/>& Offline Banner"]
+        GlobalModal["Global Error & Recovery Modals"]
+        ExportEngine["Multi-Page Blueprint PDF Engine<br/>(html2canvas + jsPDF)"]
+    end
+
+    subgraph APILayer["API Gateway & Service Layer (Port 5000)"]
+        Express["Express 4 + TypeScript Gateway"]
+        AuthMid["Stateless JWT Authentication Middleware"]
+        ProjCtrl["Project CRUD & Requirements Controller"]
+        MsgCtrl["Discussion & AI Orchestrator Controller"]
+        ErrMid["Centralized Error Middleware & Mapping"]
+    end
+
+    subgraph DataLayer["Persistence & Storage Layer"]
+        Store["Hybrid Storage Abstraction (store.ts)"]
+        Mongo[("MongoDB / Mongoose Collections<br/>Users, Projects, Blueprints, Messages")]
+        MemFallback[("In-Memory Store Fallback<br/>(Zero-Config Resilience)")]
+    end
+
+    subgraph ExternalServices["External Intelligence Services"]
+        GeminiAPI["Google Gemini API<br/>(gemini-3.8-flash)"]
+        RulesEngine["Deterministic Scoping & Fit Matrix<br/>(Suitability Scoring)"]
+    end
+
+    UI -->|REST API / HTTPS| Express
+    Express --> AuthMid
+    AuthMid --> ProjCtrl
+    AuthMid --> MsgCtrl
+    ProjCtrl --> Store
+    MsgCtrl --> Store
+    MsgCtrl --> GeminiAPI
+    MsgCtrl --> RulesEngine
+    Store --> Mongo
+    Store -.->|Fallback if Unreachable| MemFallback
+    ExportEngine -->|Client-Side Vector Render| UI
+    ErrorBound --> GlobalModal

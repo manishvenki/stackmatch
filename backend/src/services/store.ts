@@ -470,7 +470,7 @@ class InMemoryStore {
     projectId: string,
     role: 'user' | 'assistant' | 'system',
     content: string,
-    metadata?: { suggestedResponses?: string[]; stage?: 'idea' | 'requirements' | 'planning' | 'finalize'; isLiveAi?: boolean; model?: string }
+    metadata?: any
   ): Promise<Message> {
     const list = this.conversations.get(projectId) || [];
     const newMessage: Message = {

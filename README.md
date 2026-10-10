@@ -1,273 +1,351 @@
-# StackMatch
+<div align="center">
 
-> **Plan smarter. Choose better. Build with confidence.**
+# ⚡ StackMatch — Planning Studio
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](#)
-[![React](https://img.shields.io/badge/React-18.x-61dafb)](#)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-green)](#)
-[![License](https://img.shields.io/badge/license-MIT-purple)](#)
+**Plan smarter. Choose better. Build with confidence.**
+
+An editorial, AI-assisted product planning platform and architecture studio that helps founders, engineers, and technical teams turn concepts into production-ready engineering blueprints.
+
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.19-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+
+**Created and maintained by [Manish](https://github.com/manishvenki)**  
+[Repository](https://github.com/manishvenki/stackmatch) • [Bug Report](https://github.com/manishvenki/stackmatch/issues) • [Feature Request](https://github.com/manishvenki/stackmatch/issues)
 
 ---
 
-## 1. Overview
+### [Features](#-core-features) • [Screenshots](#-product-showcase) • [Architecture](#-architecture) • [Tech Stack](#-technology-stack) • [Quickstart](#-quickstart--local-development) • [Status](#-verified-feature-status) • [Roadmap](#-upcoming-roadmap)
 
-**StackMatch** is an AI-powered product discussion, project planning, and technology intelligence platform that helps technical and non-technical founders, engineers, and teams turn ideas into structured requirements, technology-stack decisions, architecture plans, roadmaps, learning resources, and build-ready blueprints.
-
-Users describe their concept naturally in plain words without needing to know technical terminology. StackMatch guides them through an intelligent scoping journey to define requirements, evaluate technology options with side-by-side trade-offs, visualize multi-tier system architectures, and construct a phased development roadmap.
+</div>
 
 ---
 
-## 2. Complete End-to-End Workflow
+## 💡 About StackMatch
 
-```text
-Landing Page & Project Creation
-  ↓
-AI Project Discussion & Clarification
-  ↓
-Categorized Requirements & Priority Scoring
-  ↓
-Technology Stack Recommendations & Trade-Offs
-  ↓
-Comparative Tech Evaluation Matrix
-  ↓
-System Architecture Topography Visualization
-  ↓
-4-Phase Milestone Development Roadmap
-  ↓
-Curated Learning Resources & Guides
-  ↓
-Final Project Blueprint & Multi-Format Export (Print/PDF, Markdown, JSON)
-  ↓
-Connect with Freelancers (Preview — Coming Soon)
+**StackMatch** is an AI-assisted project planning platform that helps developers turn an idea into a structured development plan. Define requirements, explore suitable technologies, understand the architecture, build a roadmap, and organize the work into an executive project blueprint.
+
+From napkin-sketch concepts to validated delivery roadmaps, StackMatch replaces fragmented spreadsheets, disconnected architecture diagrams, and guesswork with an integrated planning studio.
+
+---
+
+## ⚠️ Active Status Notices
+
+> [!WARNING]
+> ### 🟡 In Progress — AI Chat
+> The **AI Chat** feature is currently under active development. Integration and reliability improvements with upstream LLM providers are still being finalized. While conversation states, draft restoration, and graceful fallback recovery modals are active, live model generation may fail or fall back depending on your configured environment keys.
+
+> [!NOTE]
+> ### 🔵 Coming Soon — Connect with Freelancers
+> The **Connect with Freelancers** experience is planned for an upcoming release. The current studio displays preview tiles and workflow integration points. Dedicated marketplace profiles, direct matching, and escrow contracting will launch in a future milestone.
+
+---
+
+## 🌟 Core Features
+
+- **🎯 Natural Language Idea Scoping:** Describe your vision in plain English. The studio extracts functional and non-functional requirements, constraints, assumptions, and complexity drivers.
+- **📊 Deterministic Tech Stack Suitability Scoring:** Evaluate candidates against project constraints (scalability, ACID compliance, real-time latency) with transparent percentage match scores (90%+).
+- **🏗️ 3-Tier System Topography & Consistency Engine:** Visual modeling of Client, API Gateway, and Storage layers paired with automated architecture health checks (e.g., 94% Consistency Score).
+- **🗓️ Phased Delivery Roadmaps:** Milestone-driven timelines divided into Foundation, Core Workflows, Architecture Polish, and Production Launch.
+- **📄 Multi-Page Executive Blueprint Engine:** Instant client-side PDF export with vector typography, page-break calculation, branded headers, and executive summaries.
+- **🛡️ Centralized Error Handling & Recovery:** Detects network interruptions, quota exhaustion, and service timeouts with reassuring rotating quotes and draft preservation.
+- **🎨 Hand-Drawn Animated Doodle System:** SVG underline, spark, connector arrows, and full-screen orbital loading choreography designed in StackMatch's neutral editorial palette.
+
+---
+
+## 📸 Product Showcase
+
+All screenshots below represent the authentic, verified application running in local development:
+
+### 1. Editorial Landing Page & Interactive Studio
+The redesigned landing page pairs editorial SaaS typography (`#111827`, `#2563EB`, `#F9FAFB`) with an animated SVG doodle system and an interactive 5-tab Hero Planning Studio.
+
+![StackMatch Landing Page](docs/screenshots/landing-page.png)
+
+
+
+---
+
+### 2. Authenticated Dashboard & Project Hub
+Manage multiple active concepts, monitor stage progressions, inspect active project metrics, and access one-click project creation.
+
+![StackMatch Project Dashboard](docs/screenshots/dashboard.png)
+
+---
+
+### 3. Scoped Requirements & Project Planning Workflow
+Granular requirements matrix organizing functional, operational, and non-functional requirements with priority badges and editing controls.
+
+![StackMatch Project Planning](docs/screenshots/project-planning.png)
+
+---
+
+### 4. Verified Technology Stack & Fit Scoring
+Technology trade-off evaluation featuring match scores (91%–98%), architectural roles, rationale tags, and alternative options.
+
+![StackMatch Technology Stack](docs/screenshots/technology-stack.png)
+
+---
+
+### 5. 3-Tier Architecture Topography
+Tiered component communication models (Web/Mobile Clients → Express API Gateway → PostgreSQL/MongoDB/Redis Storage) with live architecture health checks.
+
+![StackMatch Architecture View](docs/screenshots/architecture.png)
+
+---
+
+### 6. Executive Engineering Blueprint
+Full dynamic engineering blueprint organizing executive summaries, objectives, tech stack, architecture topography, and operational checklists.
+
+![StackMatch Executive Blueprint](docs/screenshots/blueprint.png)
+
+---
+
+### 7. Multi-Page PDF Export Engine
+Export production-grade PDF blueprints directly from the browser with vector text and multi-page layout balancing.
+
+![StackMatch PDF Export](docs/screenshots/blueprint-pdf-preview.png)
+
+---
+
+### 8. AI Planning Discussion Studio *(In Progress)*
+Interactive conversational planning studio with stage detection, structured follow-up questions, and draft message recovery.
+
+![StackMatch AI Chat Status](docs/screenshots/ai-chat-status.png)
+
+---
+
+### 9. Secure Authentication Flow
+Clean, split-screen authentication forms for registration and sign-in with client-side validation and JWT session handling.
+
+| Sign In Screen | Registration Screen |
+|:---:|:---:|
+| ![Sign In](docs/screenshots/login.png) | ![Sign Up](docs/screenshots/signup.png) |
+
+---
+
+### 10. Responsive Mobile Experience
+Full viewport responsiveness across all mobile device breakpoints with fluid typography and zero horizontal scroll.
+
+<div align="center">
+  <img src="docs/screenshots/mobile-landing.png" width="340" alt="StackMatch Mobile Landing" />
+</div>
+
+---
+
+## 🏛️ Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client["Client Tier (apps/web)"]
+        UI["React 18 + Vite (Tailwind CSS)"]
+        Doodle["Doodle Animation System"]
+        ErrorBound["React Error Boundary"]
+        GlobalModal["Global Recovery Modals"]
+        ExportEngine["Multi-Page Blueprint PDF Engine"]
+    end
+
+    subgraph API["Backend API (Port 5000)"]
+        Express["Express 4 + TypeScript Gateway"]
+        AuthMid["JWT Authentication Middleware"]
+        ProjCtrl["Project CRUD Controller"]
+        MsgCtrl["Discussion & AI Controller"]
+        ErrMid["Centralized Error Middleware"]
+    end
+
+    subgraph Data["Persistence Layer"]
+        Store["Hybrid Store Abstraction (store.ts)"]
+        Mongo[("MongoDB / Mongoose")]
+        MemFallback[("In-Memory Store Fallback")]
+    end
+
+    subgraph Intelligence["AI Services"]
+        GeminiAPI["Google Gemini API (gemini-3.8-flash)"]
+        RulesEngine["Fit Scoring & Rules Engine"]
+    end
+
+    UI -->|REST API / JSON| Express
+    Express --> AuthMid
+    AuthMid --> ProjCtrl
+    AuthMid --> MsgCtrl
+    ProjCtrl --> Store
+    MsgCtrl --> Store
+    MsgCtrl --> GeminiAPI
+    MsgCtrl --> RulesEngine
+    Store --> Mongo
+    Store -.->|Zero-Config Fallback| MemFallback
+    ExportEngine -->|Client-Side Canvas/PDF| UI
+    ErrorBound --> GlobalModal
 ```
 
 ---
 
-## 3. Current Product Status & Capabilities
+## 💻 Technology Stack
 
-StackMatch is completely integrated across the frontend and backend with reliable state continuity, error recovery, and production-tested builds.
-
-- **Persistent Workflow State:** Automatic browser session hydration via `localStorage` and REST APIs (`/api/v1/projects/:id/plan`, `/api/v1/projects/:id/messages`) guarantees project data continuity across screen navigation and page reloads.
-- **AI Planning Intelligence:** Pluggable AI planning engine supporting OpenAI, Anthropic, and a zero-downtime deterministic offline fallback that generates consistent requirements, tech stacks, topography layers, and milestones without external credential dependencies.
-- **Functional Blueprint Export Engine:**
-  - 🖨️ **Print / PDF Export:** Clean executive print stylesheet (`@media print`) isolating the project blueprint proposal.
-  - 📄 **Markdown Document (.md):** Instant client-side download of the complete architectural specification (`[slug]-blueprint.md`).
-  - ⚙️ **JSON Technical Specification (.json):** Machine-readable technical export (`[slug]-spec.json`) suitable for downstream CI/CD or tooling.
-- **Connect with Freelancers (Preview):** A dedicated preview experience branded with the StackMatch philosophy:
-  > *“Great products start with clear ideas and grow with the right people.”*
-  > — The StackMatch philosophy
-- **Neutral Minimal Design System:** Consistent token palette (`#111827`, `#374151`, `#687280`, `#D1D5DB`, `#F9FAFB`, `#2563EB`, `#16A34A`), restrained elevation, accessible contrast, and responsive layout across desktop, tablet, and mobile.
-
----
-
-## 4. Technology Stack
-
-### Web Application (`apps/web`)
-- **Framework:** React 18, Vite
-- **Language:** TypeScript
-- **Styling:** Vanilla CSS & Tailwind CSS tokens (Neutral Minimal design system)
-- **Icons:** Lucide React
-- **Exporting:** Client-side Blob generation & native Print stylesheet
-
-### Mobile Application (`apps/mobile`)
-- **Framework:** React Native, Expo
-- **Language:** TypeScript
-
-### Backend API (`backend`)
-- **Runtime:** Node.js, Express
-- **Language:** TypeScript
-- **Database:** MongoDB & Mongoose (with synchronized In-Memory store fallback)
-- **Security:** JWT (JSON Web Tokens), optionalAuth guards, bcryptjs password hashing, sanitized inputs (4,000 char prompt limit), CORS
-- **Reliability:** 20-second client timeouts, standard error handler with shielded production responses
-
-### Shared Packages (`packages/types`)
-- **Contracts:** Shared TypeScript interfaces for User, Project, Requirement, Technology, Architecture, Roadmap, Blueprint, and Message schemas.
+| Layer | Technologies | Description |
+|---|---|---|
+| **Frontend** | React 18, Vite 5, TypeScript | Single-page application with modular routing and instant HMR. |
+| **Styling & Icons** | Tailwind CSS 3, Lucide React | Curated neutral color palette, micro-interactions, and vector icons. |
+| **Motion & Doodles** | SVG Stroke Dash, CSS Keyframes | Hand-drawn animated underlines, connectors, sparks, and orbit loaders. |
+| **Document Export** | html2canvas, jsPDF | Multi-page client-side PDF document generation. |
+| **Backend API** | Node.js 20+, Express 4, TypeScript | Modular REST API with typed controllers and centralized error handling. |
+| **Authentication** | JSON Web Tokens (JWT), Bcrypt.js | Stateless bearer authentication with salted password hashing. |
+| **Database** | MongoDB, Mongoose 8 | Document storage with automatic in-memory fallback for zero-config setups. |
+| **AI Intelligence** | Google Gemini API (`gemini-3.8-flash`) | Conversational scoping, follow-up generation, and prompt analysis. |
+| **Monorepo Tooling** | npm Workspaces, tsx | Unified orchestrator script (`run.js`) for concurrent multi-tier execution. |
 
 ---
 
-## 5. Project Structure
+## 🚀 Quickstart & Local Development
 
-```text
-stackmatch/
-│
-├── apps/
-│   ├── web/                    # React + Vite web application
-│   │   ├── src/
-│   │   │   ├── components/     # UI design system & domain modals (ExportBlueprintModal)
-│   │   │   ├── pages/          # Landing, Discussion, Dashboard, ProjectOverview, ConnectFreelancers
-│   │   │   ├── services/       # Resilient API client with timeout & abort controls
-│   │   │   └── types/          # Frontend contracts
-│   │   └── .env.example
-│   └── mobile/                 # React Native / Expo mobile application
-│
-├── backend/                    # Express + Node.js API service
-│   ├── src/
-│   │   ├── config/             # Environment & configuration loader
-│   │   ├── controllers/        # Auth, Project, AI, and Message handlers
-│   │   ├── middleware/         # auth (requireAuth & optionalAuth), errorHandler
-│   │   ├── models/             # Mongoose schemas
-│   │   ├── routes/             # RESTful API routes (/api/v1/auth, /api/v1/projects)
-│   │   ├── services/           # AI planning engine & synchronized storage
-│   │   └── tests/              # Automated API & domain test suite (20 tests)
-│   └── .env.example
-│
-├── packages/
-│   └── types/                  # Shared TypeScript contracts and interfaces
-│
-├── docs/                       # Architectural & API specifications
-│   ├── architecture.md
-│   ├── api.md
-│   ├── ui-system.md
-│   └── product-overview.md
-│
-├── .env.example                # Centralized environment variable template
-├── .gitignore                  # Production-grade gitignore rules
-├── README.md                   # Project documentation
-└── package.json                # Monorepo workspace configuration
-```
+### 1. Prerequisites
+- **Node.js**: v18.0.0+ (v20+ recommended)
+- **npm**: v9.0.0+
+- **MongoDB**: Optional (StackMatch automatically activates an in-memory store if MongoDB is not running locally).
 
----
-
-## 6. Local Development & Quick Start
-
-### Prerequisites
-- Node.js (v18+ or v20+)
-- npm (v9+)
-
-### Installation
+### 2. Clone & Install
 ```bash
 # Clone the repository
 git clone https://github.com/manishvenki/stackmatch.git
 cd stackmatch
 
-# Install shared types, backend, and web
-npm --prefix packages/types install
-npm --prefix packages/types run build
-npm --prefix backend install
-npm --prefix apps/web install
+# Install all workspace dependencies
+npm install
 ```
 
-### Running the Services
-
-#### 1. Start Backend API
+### 3. Configure Environment Variables
 ```bash
-npm run dev:backend
-# or
-npm --prefix backend run dev
-```
-The API server starts on `http://localhost:5000` (Health check: `http://localhost:5000/api/v1/health`).
-
-#### 2. Start Web Client
-```bash
-npm run dev:web
-# or
-npm --prefix apps/web run dev
-```
-The web application starts at `http://localhost:5173`.
-
-#### 3. Run Quality Gates & Tests
-```bash
-# Run backend automated integration tests (20/20 passing)
-npm run test:backend
-
-# Verify web production build
-npm --prefix apps/web run build
-```
-
----
-
-## 7. Environment Variables Reference
-
-Copy `.env.example` to `.env` to configure local runtime settings:
-
-```bash
+# Copy root environment configuration
 cp .env.example .env
+
+# Copy backend environment configuration
+cp backend/.env.example backend/.env
 ```
 
-| Variable | Description | Default / Example |
+Edit `.env` or `backend/.env` to configure your settings (e.g., set `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/)).
+
+### 4. Start the Application
+Boot the full monorepo concurrently using the unified runner:
+
+```bash
+# Runs types compiler, backend API (port 5000), and Vite frontend (port 5173)
+node run.js
+```
+
+Or run via npm:
+```bash
+npm run dev
+```
+
+Visit **`http://localhost:5173`** in your browser.
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Scope | Purpose | Default / Example |
+|---|---|---|---|
+| `PORT` | Backend | HTTP port for Express server | `5000` |
+| `NODE_ENV` | Backend | Application environment mode | `development` |
+| `CLIENT_URL` | Backend | Allowed CORS origin for web app | `http://localhost:5173` |
+| `MONGODB_URI` | Backend | MongoDB connection string | `mongodb://localhost:27017/stackmatch` |
+| `JWT_SECRET` | Backend | Secret key for signing session tokens | `your-secret-key-min-32-chars` |
+| `JWT_EXPIRES_IN` | Backend | Lifetime of session tokens | `7d` |
+| `GEMINI_API_KEY` | Backend | Google AI Studio Gemini API Key | `your-google-gemini-key` |
+| `GEMINI_MODEL` | Backend | Active Gemini model | `gemini-3.8-flash` |
+| `VITE_API_BASE_URL` | Frontend | Optional API proxy target | `/api/v1` (via Vite proxy) |
+
+---
+
+## 📊 Verified Feature Status
+
+| Feature | Status | Notes |
 |---|---|---|
-| `PORT` | Backend server port | `5000` |
-| `NODE_ENV` | Runtime environment (`development` / `production`) | `development` |
-| `MONGODB_URI` | MongoDB connection URI | `mongodb://localhost:27017/stackmatch` |
-| `JWT_SECRET` | Secret key for JWT signing (min 32 chars) | `replace-with-a-secure-secret` |
-| `JWT_EXPIRES_IN`| Token lifespan | `7d` |
-| `CLIENT_URL` | Frontend origin for CORS whitelist | `http://localhost:5173` |
-| `AI_PROVIDER` | AI provider (`openai`, `anthropic`, or `mock`) | `openai` |
-| `AI_API_KEY` | Provider API key (optional; fallback active if empty)| `sk-...` |
-| `VITE_API_BASE_URL` | Frontend API base URL | `/api/v1` (via Vite proxy) |
+| **Editorial Landing Page** | Verified & Active | Responsive typography, animated doodle system, interactive hero tabs. |
+| **Full-Screen Doodle Loader** | Verified & Active | Viewport-covering SVG orbital loader with graceful dismissal. |
+| **Authentication Flow** | Verified & Active | Registration, login, JWT validation, salted password hashing. |
+| **Project CRUD** | Verified & Active | Create, edit, delete, and switch projects with state persistence. |
+| **Requirements Matrix** | Verified & Active | Functional/non-functional categorization and inline editing. |
+| **Tech Stack Recommendations** | Verified & Active | Fit scoring percentages, candidate trade-offs, and architecture notes. |
+| **3-Tier Architecture Topography** | Verified & Active | Tier visualizer, communication conduits, and health score validator. |
+| **Delivery Roadmap Engine** | Verified & Active | Phased milestone timeline and deliverable breakdown. |
+| **Executive Blueprint** | Verified & Active | Dynamic multi-section document synthesis. |
+| **Multi-Page PDF Download** | Verified & Active | Browser-rendered vector PDF downloads with sanitized filenames. |
+| **Offline Mode & Recovery** | Verified & Active | Connectivity detection, sticky offline banner, and recovery modals. |
+| **AI Planning Chat** | 🟡 **In Progress** | Conversation UI and draft recovery verified; upstream model tuning ongoing. |
+| **Connect with Freelancers** | 🔵 **Coming Soon** | Studio integration tiles active; marketplace launching in future update. |
 
 ---
 
-## 8. API Endpoints Reference
+## 📂 Repository Structure
 
-### Authentication (`/api/v1/auth`)
-- `POST /register`: Register a new user account.
-- `POST /login`: Authenticate and receive a JWT token.
-- `GET /me`: Get current user profile (JWT required).
-
-### Project Management (`/api/v1/projects`)
-- `GET /`: List projects (supports guest and authenticated users).
-- `POST /`: Create a new project.
-- `GET /:id`: Retrieve project details.
-- `PATCH /:id`: Update project metadata and stage.
-- `DELETE /:id`: Remove a project.
-
-### AI Planning & Intelligence (`/api/v1/projects/:id`)
-- `POST /:id/analyze-idea`: Analyze natural language prompt and extract problem statement, user roles, constraints, and follow-up questions.
-- `POST /:id/generate-plan`: Generate complete requirements, tech stack recommendations, architecture topography, and roadmap milestones.
-- `GET /:id/plan`: Retrieve the complete consolidated project plan.
-- `GET /:id/context`: Retrieve synthesized Project Context (problem statement, user personas, stated boundaries, constraints, unresolved questions).
-- `GET /:id/architecture/validate`: Run automated Architecture Consistency Validation (0–100 health score, missing layers, incompatible services, actionable mitigations).
-- `GET /:id/insights/risks`: Run Technical Risk & Complexity Assessment (bottlenecks, testing requirements, deployment considerations, risk matrices).
-- `GET /:id/comparisons?category=...`: Get multi-category technology comparison matrix (Databases, Frontend, Backend, Authentication, Cloud & Hosting).
-- `GET /:id/requirements`: Retrieve prioritized requirements.
-- `PUT /:id/requirements/:reqId`: Update requirement status or description.
-- `DELETE /:id/requirements/:reqId`: Remove a requirement.
-- `GET /:id/tech-stack`: Get recommended technologies with architectural roles, integration considerations, and scoring rationale.
-- `GET /:id/architecture`: Get multi-tier architecture nodes and consistency health report.
-- `GET /:id/roadmap`: Get 4-phase sequential milestones with prerequisites, acceptance criteria, and risks.
-- `GET /:id/blueprint`: Get executive blueprint spec.
-- `GET /:id/messages`: Retrieve conversation history.
-- `POST /:id/messages`: Send user message and get structured AI reply.
-
----
-
-## 9. Production Readiness & Deployment Checklist
-
-- [x] **Monorepo Contracts:** `@stackmatch/types` built with full type coverage across intelligence entities.
-- [x] **API Test Suite:** 24/24 automated tests passing across auth, project lifecycle, context engine, validation, and risks.
-- [x] **Production Bundle:** Vite production build compiles with zero TypeScript errors.
-- [x] **Project Context Engine:** Consolidates original idea, problem statement, target users, platform requirements, timeline/budget assumptions, complexity factors, and unresolved questions without fabricating unknown requirements.
-- [x] **Architecture Consistency Validation:** Analyzes presentation, API, persistence, cache, payment, and telemetry layers, computing actionable findings and health scores.
-- [x] **Complexity & Technical Risk Insights:** Evaluates complexity drivers, peak concurrency bottlenecks, payment webhook risks, and practical mitigations.
-- [x] **Multi-Category Comparisons:** Dynamic matrix comparing Databases, Frontend, Backend, Authentication, and Cloud & Hosting options.
-- [x] **Transparent Recommendation Scoring:** Technology cards explain scoring criteria and role in architecture.
-- [x] **Enhanced Roadmap & Learning Resources:** Milestone prerequisites, deliverable acceptance criteria, and difficulty-rated learning resources.
-- [x] **Neutral Minimal Design:** Consistent token palette, responsive layouts, and accessible contrast.
-- [x] **Blueprint Export:** Multi-format export (Print/PDF, Markdown, JSON) fully operational.
-- [x] **Freelancer Discovery:** Authentic "Coming Soon" preview adhering to product boundaries.
+```text
+stackmatch/
+├── apps/
+│   └── web/                     # React 18 + Vite frontend
+│       ├── src/
+│       │   ├── components/      # Doodles, Layout, Chat, Domain, UI components
+│       │   ├── context/         # GlobalErrorContext, NetworkStatusContext
+│       │   ├── pages/           # Landing, Dashboard, Overview, Chat, Auth pages
+│       │   ├── services/        # ApiClient, errorMapper, mockData
+│       │   └── utils/           # pdfExport, quotes, retryRequest
+│       └── package.json
+├── backend/                     # Express + TypeScript backend API
+│   ├── src/
+│   │   ├── config/              # Environment config and model settings
+│   │   ├── controllers/         # Auth, Project, and Message controllers
+│   │   ├── middleware/          # JWT auth and centralized errorHandler
+│   │   ├── models/              # Mongoose schemas (User, Project, Blueprint)
+│   │   └── services/            # geminiService, aiPlanningService, store
+│   └── package.json
+├── packages/
+│   └── types/                   # Shared TypeScript interfaces monorepo package
+│       └── src/index.ts
+├── docs/
+│   ├── screenshots/             # Authentic application screenshots
+│   └── architecture.mmd         # Mermaid system topography source
+├── scripts/
+│   ├── capture-all-screenshots.js # Puppeteer/Chrome automated screenshot suite
+│   ├── test-error-mapper.mjs    # Error mapping and retry unit tests
+│   └── verify-landing-page.js   # Landing page visual verification script
+├── run.js                       # Monorepo unified multi-tier runner
+├── .env.example                 # Root environment template
+├── CONTRIBUTING.md              # Contribution guidelines
+├── LICENSE                      # ISC License
+└── package.json                 # Monorepo workspaces manifest
+```
 
 ---
 
-## 10. Product Boundary
+## 🗺️ Upcoming Roadmap
 
-StackMatch currently focuses on:
-- Product discussion and requirement clarification
-- Project context consolidation and transparent constraint modeling
-- Requirements prioritization and acceptance criteria specification
-- Technology stack intelligence, suitability scoring, and multi-category trade-offs
-- Architecture consistency validation and system health diagnostics
-- Technical risk identification, bottleneck detection, and practical mitigations
-- Phased development roadmap planning
-- Build-ready blueprint generation and multi-format export
-
-StackMatch is **NOT** currently an autonomous:
-- Code generator or compiler
-- Automated cloud repository deployer
-- Live transactional freelancer marketplace (marketplace is in preview)
+- [ ] **AI Chat Pipeline Stabilization:** Streaming response support, enhanced token budgeting, and multi-turn context compression.
+- [ ] **Live Workspace Collaboration:** Real-time multi-user cursor alignment on requirements matrices.
+- [ ] **Export Enhancements:** Markdown and OpenAPI 3.0 export options directly from the blueprint toolbar.
+- [ ] **Freelancer Marketplace Hub:** Direct matching with verified contract engineers based on the exact recommended tech stack.
+- [ ] **Self-Hosted Docker Image:** Single-container Docker deployment for private on-premise planning studios.
 
 ---
 
-*StackMatch — Plan smarter. Choose better. Build with confidence.*
+## 👨‍💻 Creator & Credits
 
+Created and maintained with ❤️ by **[Manish](https://github.com/manishvenki)**  
+GitHub: [@manishvenki](https://github.com/manishvenki)  
+Repository: [https://github.com/manishvenki/stackmatch](https://github.com/manishvenki/stackmatch)
+
+### Acknowledgements
+- [Lucide Icons](https://lucide.dev/) for vector UI icons.
+- [Vite](https://vitejs.dev/) for lightning-fast frontend bundling.
+- [Tailwind CSS](https://tailwindcss.com/) for utility styling.
+- [Google AI Studio](https://aistudio.google.com/) for Gemini models.
+
+---
+
+## 📄 License
+
+This project is licensed under the **ISC License** — see the [LICENSE](LICENSE) file for details.

@@ -62,14 +62,30 @@ function AppContent() {
   const { isOnline } = useNetworkStatus();
 
   // Navigation & View State
-  const [currentView, setCurrentView] = useState<string>('landing');
+  const [currentView, setCurrentView] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('view');
+      if (p && ['landing', 'blueprint', 'overview', 'dashboard', 'chat', 'features', 'how-it-works', 'signin', 'signup'].includes(p)) {
+        return p;
+      }
+    }
+    return 'landing';
+  });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [chatDraft, setChatDraft] = useState<string>('');
 
   // Social Sharing & Blueprint State
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [overviewInitialTab, setOverviewInitialTab] = useState<string>('overview');
+  const [overviewInitialTab, setOverviewInitialTab] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const t = new URLSearchParams(window.location.search).get('tab');
+      if (t) return t;
+      const v = new URLSearchParams(window.location.search).get('view');
+      if (v === 'blueprint') return 'blueprint';
+    }
+    return 'overview';
+  });
 
   // Auth Modal State
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -114,11 +130,15 @@ function AppContent() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const queryView = urlParams.get('view');
-        if (queryView && ['landing', 'blueprint', 'overview', 'dashboard', 'chat', 'features', 'how-it-works'].includes(queryView)) {
+        const queryTab = urlParams.get('tab');
+        if (queryView && ['landing', 'blueprint', 'overview', 'dashboard', 'chat', 'features', 'how-it-works', 'signin', 'signup'].includes(queryView)) {
           setCurrentView(queryView);
           if (queryView === 'blueprint') {
             setOverviewInitialTab('blueprint');
           }
+        }
+        if (queryTab) {
+          setOverviewInitialTab(queryTab);
         }
 
         let loggedUser: User | null = null;
@@ -147,11 +167,15 @@ function AppContent() {
             const targetProj = fetchedProjects.find((p) => p.id === savedProjectId) || fetchedProjects[0];
             setActiveProject(targetProj);
 
-            const savedView = localStorage.getItem('sm_last_view');
-            if (savedView && ['dashboard', 'overview', 'chat', 'connect', 'settings'].includes(savedView)) {
-              setCurrentView(savedView);
+            if (queryView) {
+              setCurrentView(queryView);
             } else {
-              setCurrentView('dashboard');
+              const savedView = localStorage.getItem('sm_last_view');
+              if (savedView && ['dashboard', 'overview', 'chat', 'connect', 'settings'].includes(savedView)) {
+                setCurrentView(savedView);
+              } else {
+                setCurrentView('dashboard');
+              }
             }
 
             // Hydrate plan and conversation for active project
@@ -177,14 +201,18 @@ function AppContent() {
               }
             } catch (_) {}
           } else {
-            setCurrentView('dashboard');
+            if (!queryView) setCurrentView('dashboard');
           }
         } else {
-          const savedView = localStorage.getItem('sm_last_view');
-          if (savedView && ['features', 'how-it-works'].includes(savedView)) {
-            setCurrentView(savedView);
+          if (queryView) {
+            setCurrentView(queryView);
           } else {
-            setCurrentView('landing');
+            const savedView = localStorage.getItem('sm_last_view');
+            if (savedView && ['features', 'how-it-works'].includes(savedView)) {
+              setCurrentView(savedView);
+            } else {
+              setCurrentView('landing');
+            }
           }
         }
       } catch (_) {
@@ -679,7 +707,7 @@ function AppContent() {
   };
 
   const isWorkspaceView = Boolean(
-    currentUser && ['dashboard', 'chat', 'overview', 'blueprint', 'projects', 'connect', 'settings'].includes(currentView)
+    ['dashboard', 'chat', 'overview', 'blueprint', 'projects', 'connect', 'settings'].includes(currentView)
   );
 
   // Split-screen full-page auth & onboarding views (outside standard shell)

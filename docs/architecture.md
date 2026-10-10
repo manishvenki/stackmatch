@@ -12,8 +12,7 @@ stackmatch/
 ├── backend/          # Node.js + Express + TypeScript + Mongoose + JWT
 │
 ├── packages/
-│   ├── types/        # Shared TypeScript contracts and schemas
-│   └── ui/           # Shared design tokens
+│   └── types/        # Shared TypeScript contracts and schemas
 │
 ├── docs/             # Technical and architectural documentation
 └── .env.example
