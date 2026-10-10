@@ -5,6 +5,7 @@ import { LandingPage } from './pages/LandingPage';
 import { DiscussionPage } from './pages/DiscussionPage';
 import { ProjectOverviewPage } from './pages/ProjectOverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ConnectFreelancersPage } from './pages/ConnectFreelancersPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { api } from './services/api';
@@ -349,7 +350,7 @@ function AppContent() {
     });
   };
 
-  const isWorkspaceView = ['workspace', 'chat', 'overview', 'projects', 'dashboard'].includes(currentView);
+  const isWorkspaceView = ['workspace', 'chat', 'overview', 'projects', 'dashboard', 'connect'].includes(currentView);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
@@ -380,6 +381,7 @@ function AppContent() {
               if (nav === 'dashboard' || nav === 'projects') setCurrentView('dashboard');
               else if (nav === 'overview') setCurrentView('overview');
               else if (nav === 'chat') setCurrentView('chat');
+              else if (nav === 'connect') setCurrentView('connect');
               else if (nav === 'resources') setCurrentView('resources');
               else setCurrentView(nav);
             }}
@@ -407,6 +409,7 @@ function AppContent() {
                 handleSelectProject(id);
                 setCurrentView('overview');
               }}
+              onExploreConnect={() => setCurrentView('connect')}
             />
           )}
 
@@ -420,6 +423,16 @@ function AppContent() {
                 setActiveProject(proj);
                 setCurrentView('chat');
               }}
+              onNavigateConnect={() => setCurrentView('connect')}
+            />
+          )}
+
+          {currentView === 'connect' && (
+            <ConnectFreelancersPage
+              activeProject={activeProject}
+              onNavigateToDashboard={() => setCurrentView('dashboard')}
+              onNavigateToProject={() => setCurrentView('overview')}
+              onNavigateToChat={() => setCurrentView('chat')}
             />
           )}
 
@@ -451,6 +464,7 @@ function AppContent() {
               onUpdateRequirement={handleUpdateRequirement}
               onDeleteRequirement={handleDeleteRequirement}
               onAddRequirement={handleAddRequirement as any}
+              onNavigateConnect={() => setCurrentView('connect')}
             />
           )}
 

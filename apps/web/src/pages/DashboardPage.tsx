@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Users,
+  Compass,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -23,6 +25,7 @@ export interface DashboardPageProps {
   onSelectProject: (projectId: string) => void;
   onNewProject: () => void;
   onContinueChat: (project: Project) => void;
+  onNavigateConnect?: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -31,6 +34,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onSelectProject,
   onNewProject,
   onContinueChat,
+  onNavigateConnect,
 }) => {
   const stageVariant = {
     idea: 'neutral',
@@ -98,8 +102,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-2xs">
-            <span className="text-[11px] font-semibold text-[#687280] block">Platform Phase</span>
-            <span className="text-sm font-bold text-[#2563EB] mt-2 block">Phase 2 Intelligence</span>
+            <span className="text-[11px] font-semibold text-[#687280] block">Marketplace Hub</span>
+            <span className="text-sm font-bold text-[#D97706] mt-2 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#D97706]" /> Connect (Soon)
+            </span>
           </div>
         </div>
 
@@ -126,7 +132,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-[#111827]">No projects planned yet</h3>
                 <p className="text-xs text-[#687280] leading-relaxed">
-                  Start by describing your idea in natural language. StackMatch will extract functional requirements, recommend the ideal technology stack, and construct a system architecture.
+                  Start by describing your idea in natural language. A structured project blueprint will make future professional collaboration with freelancers and consultants much easier.
                 </p>
               </div>
               <Button
@@ -207,12 +213,53 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           )}
         </div>
 
+        {/* Compact Connect with Freelancers Card (Prompt Section 6) */}
+        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-5 hover:border-[#D1D5DB] transition-all">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0 mt-0.5">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-[#111827]">
+                  Connect with Freelancers
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#FEF3C7] text-[#D97706] px-2 py-0.5 rounded-full border border-[#FDE68A]">
+                  COMING SOON
+                </span>
+              </div>
+              <p className="text-xs text-[#4B5563] max-w-2xl leading-relaxed">
+                Your project plan is the first step. Find the right people to help bring your idea to life. Connect your verified requirements with skilled freelancers, IT consultants, and development teams.
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            {onNavigateConnect && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNavigateConnect}
+                rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              >
+                Marketplace Preview
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Product Journey Overview Banner */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-2xs space-y-4">
-          <div className="flex items-center gap-2">
-            <StackMatchLogo variant="mark" size="sm" />
-            <h3 className="text-sm font-bold text-[#111827]">StackMatch 8-Step Product Journey</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <StackMatchLogo variant="mark" size="sm" />
+              <h3 className="text-sm font-bold text-[#111827]">StackMatch 8-Step Product Journey</h3>
+            </div>
+            <span className="text-[11px] text-[#687280]">
+              Next Phase: <strong className="text-[#111827]">Connect with Freelancers</strong>
+            </span>
           </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 text-center text-xs">
             {[
               { step: '01', name: 'Idea' },

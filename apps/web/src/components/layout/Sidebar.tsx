@@ -2,10 +2,10 @@ import React from 'react';
 import {
   PlusCircle,
   LayoutDashboard,
-  FolderKanban,
   MessageSquare,
   Layers,
   BookOpen,
+  Users,
   Settings,
   ChevronRight,
   LogOut,
@@ -44,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'chat', label: 'AI Discussion Studio', icon: MessageSquare },
     { id: 'overview', label: 'Project Plan Overview', icon: Layers },
+    { id: 'connect', label: 'Connect with Freelancers', icon: Users, isComingSoon: true },
     { id: 'resources', label: 'Learning Resources', icon: BookOpen },
   ];
 
@@ -83,14 +84,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSelectNav(item.id);
                   if (onCloseMobile) onCloseMobile();
                 }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-subtle cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-subtle cursor-pointer ${
                   isActive
                     ? 'bg-[#111827] text-white font-semibold shadow-xs'
                     : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F9FAFB]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#687280]'}`} />
-                <span>{item.label}</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#687280]'}`} />
+                  <span className="truncate">{item.label}</span>
+                </div>
+                {item.isComingSoon && (
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider shrink-0 ml-1.5 ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]'
+                    }`}
+                  >
+                    SOON
+                  </span>
+                )}
               </button>
             );
           })}

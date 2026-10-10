@@ -14,6 +14,7 @@ import {
   GitBranch,
   Terminal,
   Zap,
+  Users,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -24,12 +25,14 @@ export interface LandingPageProps {
   onStartPlanning: () => void;
   onExploreProject: (projectId: string) => void;
   onExploreHowItWorks?: () => void;
+  onExploreConnect?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStartPlanning,
   onExploreProject,
   onExploreHowItWorks,
+  onExploreConnect,
 }) => {
   return (
     <div className="w-full bg-[#F9FAFB] text-[#111827]">
@@ -217,6 +220,81 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <p className="text-xs text-[#687280] leading-relaxed">{item.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Connect with Freelancers - Marketplace Preview (Prompt Section 3 & 4) */}
+      <section className="py-20 bg-[#F9FAFB] border-b border-[#E5E7EB]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-8 sm:p-12 shadow-2xs">
+            <div className="max-w-3xl mx-auto text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FEF3C7] border border-[#FDE68A] text-xs font-bold text-[#D97706] shadow-2xs">
+                <Users className="w-3.5 h-3.5 text-[#D97706]" />
+                <span className="tracking-wider uppercase">COMING SOON • STACKMATCH CONNECT</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+                Connect with Freelancers
+              </h2>
+
+              <p className="text-sm text-[#4B5563] leading-relaxed max-w-xl mx-auto">
+                “Your project plan is the first step. Find the right people to help bring your idea to life.”
+              </p>
+
+              <div className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] max-w-xl mx-auto">
+                <blockquote className="text-xs sm:text-sm font-medium text-[#111827] italic">
+                  “Great products start with clear ideas and grow with the right people.”
+                </blockquote>
+                <p className="text-[11px] font-semibold text-[#687280] not-italic mt-1 uppercase tracking-wider">
+                  — The StackMatch philosophy
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                {onExploreConnect && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onExploreConnect}
+                    rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                  >
+                    Explore Marketplace Preview
+                  </Button>
+                )}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#F3F4F6] border border-[#D1D5DB] text-xs font-semibold text-[#4B5563]">
+                  <span className="w-2 h-2 rounded-full bg-[#D97706]" />
+                  <span>Freelancer marketplace — Coming Soon</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-10">
+              <div className="p-5 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] space-y-2">
+                <span className="text-[10px] font-bold text-[#687280] uppercase tracking-wider block">Planned Capability</span>
+                <h4 className="text-sm font-bold text-[#111827]">Find the Right Skills</h4>
+                <p className="text-xs text-[#687280] leading-relaxed">
+                  Discover professionals based on the technologies and capabilities your project needs.
+                </p>
+              </div>
+
+              <div className="p-5 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] space-y-2">
+                <span className="text-[10px] font-bold text-[#687280] uppercase tracking-wider block">Planned Capability</span>
+                <h4 className="text-sm font-bold text-[#111827]">Share Your Blueprint</h4>
+                <p className="text-xs text-[#687280] leading-relaxed">
+                  Give potential collaborators a structured overview of your goals, requirements, and planned technology stack.
+                </p>
+              </div>
+
+              <div className="p-5 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] space-y-2">
+                <span className="text-[10px] font-bold text-[#687280] uppercase tracking-wider block">Planned Capability</span>
+                <h4 className="text-sm font-bold text-[#111827]">Work with Confidence</h4>
+                <p className="text-xs text-[#687280] leading-relaxed">
+                  Review portfolios, compare relevant experience, and prepare for more informed project discussions.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

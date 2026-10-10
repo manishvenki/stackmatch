@@ -52,6 +52,7 @@ export interface ProjectOverviewPageProps {
   onUpdateRequirement?: (updatedReq: Partial<Requirement> & { id: string }) => Promise<void>;
   onDeleteRequirement?: (requirementId: string) => Promise<void>;
   onAddRequirement?: (newReq: Omit<Requirement, 'id' | 'projectId'>) => Promise<void>;
+  onNavigateConnect?: () => void;
 }
 
 export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
@@ -68,6 +69,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   onUpdateRequirement,
   onDeleteRequirement,
   onAddRequirement,
+  onNavigateConnect,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedTech, setSelectedTech] = useState<Technology>(
@@ -814,6 +816,40 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                   </p>
                 </div>
               </Card>
+            </div>
+
+            {/* Contextual Connect with Freelancers Preview (Prompt Section 3 & 6) */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0 mt-0.5">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Next Step: Connect with Freelancers
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#FEF3C7] text-[#D97706] px-2 py-0.5 rounded-full border border-[#FDE68A]">
+                      COMING SOON
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#4B5563] max-w-2xl leading-relaxed">
+                    Your project plan is the first step. Find the right people to help bring your idea to life. In a future update, you will be able to share {project.name}'s verified blueprint with pre-evaluated freelancers, IT consultants, and development teams.
+                  </p>
+                </div>
+              </div>
+
+              {onNavigateConnect && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNavigateConnect}
+                  rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                  className="shrink-0"
+                >
+                  Marketplace Preview
+                </Button>
+              )}
             </div>
           </div>
         )}

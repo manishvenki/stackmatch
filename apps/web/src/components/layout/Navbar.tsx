@@ -58,6 +58,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             Resources
           </button>
           <button
+            onClick={() => onNavigate('connect')}
+            className={`transition-subtle hover:text-[#111827] cursor-pointer flex items-center gap-1.5 ${
+              currentView === 'connect' ? 'text-[#111827]' : ''
+            }`}
+          >
+            <span>Connect</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
+              SOON
+            </span>
+          </button>
+          <button
             onClick={() => onNavigate('workspace')}
             className={`transition-subtle hover:text-[#111827] cursor-pointer ${
               currentView === 'workspace' ? 'text-[#111827]' : ''
@@ -148,6 +159,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="px-3 py-2 text-left rounded-lg hover:bg-[#F3F4F6]"
             >
               Resources
+            </button>
+            <button
+              onClick={() => {
+                onNavigate('connect');
+                setMobileMenuOpen(false);
+              }}
+              className="px-3 py-2 text-left rounded-lg hover:bg-[#F3F4F6] flex items-center justify-between"
+            >
+              <span>Connect with Freelancers</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
+                SOON
+              </span>
             </button>
             <button
               onClick={() => {
