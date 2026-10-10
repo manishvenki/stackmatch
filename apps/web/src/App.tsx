@@ -17,6 +17,7 @@ import { AuthModal } from './components/auth/AuthModal';
 import { ProjectModal } from './components/domain/ProjectModal';
 import { DeleteProjectModal } from './components/domain/DeleteProjectModal';
 import { ToastProvider, useToast } from './components/ui/Toast';
+import { FullScreenDoodleLoader } from './components/doodles/FullScreenDoodleLoader';
 import { api } from './services/api';
 import {
   fallbackProject,
@@ -56,6 +57,7 @@ function AppContent() {
   // Navigation & View State
   const [currentView, setCurrentView] = useState<string>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Social Sharing & Blueprint State
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -179,6 +181,11 @@ function AppContent() {
         }
       } catch (_) {
         // Fallback initialized
+      } finally {
+        // Smoothly dismiss full-screen doodle loader once data/fallback is calibrated
+        setTimeout(() => {
+          setIsInitialLoading(false);
+        }, 500);
       }
     };
     initData();
@@ -663,6 +670,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
+      {/* Full-Screen Doodle Loading Experience */}
+      <FullScreenDoodleLoader
+        isLoading={isInitialLoading}
+        onFinished={() => setIsInitialLoading(false)}
+      />
+
       {/* Top Navbar */}
       <Navbar
         currentUser={currentUser}

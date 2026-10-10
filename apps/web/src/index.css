@@ -53,6 +53,84 @@
   scrollbar-width: none;
 }
 
+/* Doodle Animation System */
+@keyframes doodleDraw {
+  from {
+    stroke-dashoffset: 600;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes doodleDashFlow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes doodlePulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes doodleFloatSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes loaderNodeAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-doodle-draw {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: doodleDraw 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-doodle-flow {
+  animation: doodleDashFlow 1.8s linear infinite;
+}
+
+.animate-doodle-pulse {
+  animation: doodlePulseGlow 3s ease-in-out infinite;
+}
+
+.animate-doodle-float {
+  animation: doodleFloatSlow 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-doodle-draw,
+  .animate-doodle-flow,
+  .animate-doodle-pulse,
+  .animate-doodle-float {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
 /* Print Styles for Executive Blueprint Multi-Page PDF Generation */
 @page {
   size: A4 portrait;
