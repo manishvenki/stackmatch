@@ -30,7 +30,7 @@ import {
   ProjectBlueprint,
   ProjectRiskItem,
 } from '../../types';
-import { exportBlueprintToPdf } from '../../utils/pdfExport';
+import { downloadBlueprintPdf, sanitizeProjectFilename } from '../../utils/pdfExport';
 
 export interface DynamicBlueprintDocumentProps {
   project: Project;
@@ -90,22 +90,32 @@ export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> =
   const handleDownloadPdf = async () => {
     if (isExportingPdf) return;
     setIsExportingPdf(true);
-    setExportStage('Initializing...');
+    setExportStage('Generating PDF...');
     try {
-      const slug = (project.name || 'stackmatch-blueprint')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
-      await exportBlueprintToPdf('stackmatch-blueprint-doc', {
-        filename: `${slug}-blueprint.pdf`,
-        onProgress: (stage) => setExportStage(stage),
-      });
+      const filename = sanitizeProjectFilename(project.name);
+      await downloadBlueprintPdf(
+        {
+          project,
+          requirements,
+          technologies,
+          architectureNodes,
+          roadmapPhases,
+          resources,
+          risks,
+          blueprint,
+        },
+        {
+          filename,
+          onProgress: (stage) => setExportStage(stage),
+        }
+      );
     } catch (err) {
       console.error('Failed to export PDF:', err);
+      setExportStage('Generation failed');
+      setTimeout(() => setExportStage(''), 4000);
     } finally {
       setIsExportingPdf(false);
-      setExportStage('');
+      setTimeout(() => setExportStage(''), 3000);
     }
   };
 

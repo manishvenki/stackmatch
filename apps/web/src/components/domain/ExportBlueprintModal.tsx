@@ -10,7 +10,7 @@ import {
   RoadmapPhase,
   ProjectBlueprint,
 } from '../../types';
-import { exportBlueprintToPdf } from '../../utils/pdfExport';
+import { downloadBlueprintPdf, sanitizeProjectFilename } from '../../utils/pdfExport';
 
 export interface ExportBlueprintModalProps {
   isOpen: boolean;
@@ -53,12 +53,23 @@ export const ExportBlueprintModal: React.FC<ExportBlueprintModalProps> = ({
       setIsExporting(true);
       setExportProgress('Starting multi-page PDF generation...');
       try {
-        await exportBlueprintToPdf('stackmatch-blueprint-doc', {
-          filename: `${slug}-blueprint.pdf`,
-          onProgress: (stage) => setExportProgress(stage),
-        });
+        const filename = sanitizeProjectFilename(project.name);
+        await downloadBlueprintPdf(
+          {
+            project,
+            requirements,
+            technologies,
+            architectureNodes,
+            roadmapPhases,
+            blueprint,
+          },
+          {
+            filename,
+            onProgress: (stage) => setExportProgress(stage),
+          }
+        );
         if (onNotifySuccess) {
-          onNotifySuccess(`Downloaded complete multi-page PDF: ${slug}-blueprint.pdf`);
+          onNotifySuccess(`Downloaded complete blueprint: ${filename}`);
         }
         onClose();
       } catch (err) {
