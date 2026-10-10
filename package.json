@@ -9,7 +9,9 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev:web",
+    "start": "node run.js",
+    "dev": "node run.js",
+    "dev:all": "node run.js",
     "dev:web": "npm --prefix apps/web run dev",
     "dev:backend": "npm --prefix backend run dev",
     "dev:mobile": "npm --prefix apps/mobile run start",
