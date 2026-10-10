@@ -6,6 +6,8 @@ export interface ChatInputProps {
   isLoading?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  draftText?: string;
+  onDraftChange?: (val: string) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -13,9 +15,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   isLoading = false,
   disabled = false,
   placeholder = 'Describe your idea...',
+  draftText,
+  onDraftChange,
 }) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState(draftText || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync draftText updates from parent (e.g. restoring failed message)
+  useEffect(() => {
+    if (draftText !== undefined && draftText !== text) {
+      setText(draftText);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+        textareaRef.current.focus();
+      }
+    }
+  }, [draftText]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -26,15 +42,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = () => {
     if (!text.trim() || isLoading || disabled) return;
-    onSend(text.trim());
+    const submittedText = text.trim();
+    onSend(submittedText);
     setText('');
+    if (onDraftChange) onDraftChange('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
   };
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
+    const val = e.target.value;
+    setText(val);
+    if (onDraftChange) onDraftChange(val);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;

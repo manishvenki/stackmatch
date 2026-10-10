@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { TechLogo } from '../brand/techLogos';
+import { useErrorHandler } from '../../context/GlobalErrorContext';
+import { mapError } from '../../services/errorMapper';
 import {
   Project,
   Requirement,
@@ -83,6 +85,8 @@ export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> =
 
   const checklist = blueprint?.checklist || defaultChecklist;
 
+  const { showErrorModal } = useErrorHandler();
+
   const handlePrint = () => {
     window.print();
   };
@@ -112,6 +116,12 @@ export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> =
     } catch (err) {
       console.error('Failed to export PDF:', err);
       setExportStage('Generation failed');
+      const appErr = mapError(err, 'pdf-export');
+      showErrorModal(appErr, {
+        context: 'pdf-export',
+        onRetry: handleDownloadPdf,
+        onSecondary: () => window.print(),
+      });
       setTimeout(() => setExportStage(''), 4000);
     } finally {
       setIsExportingPdf(false);

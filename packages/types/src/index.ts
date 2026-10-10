@@ -337,6 +337,10 @@ export interface MessageMetadata {
   stage?: ProjectStage;
   followUpQuestion?: FollowUpQuestion;
   analysisSummary?: Partial<IdeaAnalysisResult>;
+  status?: 'pending' | 'sent' | 'failed';
+  errorText?: string;
+  isLiveAi?: boolean;
+  model?: string;
 }
 
 export interface Message {

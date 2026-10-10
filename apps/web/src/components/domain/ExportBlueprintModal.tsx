@@ -11,6 +11,8 @@ import {
   ProjectBlueprint,
 } from '../../types';
 import { downloadBlueprintPdf, sanitizeProjectFilename } from '../../utils/pdfExport';
+import { useErrorHandler } from '../../context/GlobalErrorContext';
+import { mapError } from '../../services/errorMapper';
 
 export interface ExportBlueprintModalProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export const ExportBlueprintModal: React.FC<ExportBlueprintModalProps> = ({
   const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'print' | 'markdown' | 'json'>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState('');
+  const { showErrorModal } = useErrorHandler();
 
   if (!isOpen) return null;
 
@@ -75,6 +78,14 @@ export const ExportBlueprintModal: React.FC<ExportBlueprintModalProps> = ({
       } catch (err) {
         console.error('Failed to export PDF:', err);
         setExportProgress('Generation failed. Please try Print to PDF instead.');
+        const appErr = mapError(err, 'pdf-export');
+        showErrorModal(appErr, {
+          context: 'pdf-export',
+          onRetry: () => handleExport(),
+          onSecondary: () => {
+            window.print();
+          },
+        });
       } finally {
         setIsExporting(false);
       }

@@ -14,6 +14,8 @@ import {
   Message
 } from '../types';
 
+import { mapError, AppError } from './errorMapper';
+
 const API_BASE = ((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api/v1';
 
 class ApiClient {
@@ -36,7 +38,12 @@ class ApiClient {
     return this.token;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, context?: string): Promise<T> {
+    // Proactive offline check
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw mapError(new Error('Offline: No internet connection detected.'), context || endpoint);
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {})
@@ -47,7 +54,7 @@ class ApiClient {
     }
 
     const controller = new AbortController();
-    const timeoutDuration = 20000;
+    const timeoutDuration = 25000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
     try {
@@ -61,17 +68,29 @@ class ApiClient {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(json.error || `HTTP error ${res.status}`);
+        const errorMsg = json.error || `HTTP error ${res.status}`;
+        const errObj = {
+          message: errorMsg,
+          statusCode: res.status,
+          status: res.status,
+          data: json
+        };
+        const errorContext = context || (endpoint.includes('messages') ? 'ai-chat' : endpoint);
+        throw mapError(errObj, errorContext);
       }
 
       return json.data !== undefined ? json.data : json;
     } catch (err: any) {
       clearTimeout(timeoutId);
+      if (err instanceof AppError) {
+        throw err;
+      }
+      const errorContext = context || (endpoint.includes('messages') ? 'ai-chat' : endpoint);
       if (err.name === 'AbortError') {
-        throw new Error('Request timed out. Please check your connection and try again.');
+        throw mapError(new Error('Request timed out. Please check your connection and try again.'), errorContext);
       }
       console.warn(`API call ${endpoint} failed:`, err.message);
-      throw err;
+      throw mapError(err, errorContext);
     }
   }
 

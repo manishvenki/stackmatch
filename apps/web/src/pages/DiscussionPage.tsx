@@ -16,6 +16,10 @@ export interface DiscussionPageProps {
   onGeneratePlan?: () => Promise<void>;
   isGeneratingPlan?: boolean;
   onOpenMobileSidebar?: () => void;
+  onRetryMessage?: (message: Message) => void;
+  onRestoreDraft?: (content: string) => void;
+  draftText?: string;
+  onDraftChange?: (val: string) => void;
 }
 
 export const DiscussionPage: React.FC<DiscussionPageProps> = ({
@@ -27,6 +31,10 @@ export const DiscussionPage: React.FC<DiscussionPageProps> = ({
   onGeneratePlan,
   isGeneratingPlan = false,
   onOpenMobileSidebar,
+  onRetryMessage,
+  onRestoreDraft,
+  draftText,
+  onDraftChange,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +123,8 @@ export const DiscussionPage: React.FC<DiscussionPageProps> = ({
             key={msg.id}
             message={msg}
             onSelectSuggestion={(suggestion) => onSendMessage(suggestion)}
+            onRetryMessage={onRetryMessage}
+            onRestoreDraft={onRestoreDraft}
           />
         ))}
 
@@ -176,6 +186,8 @@ export const DiscussionPage: React.FC<DiscussionPageProps> = ({
             onSend={onSendMessage}
             isLoading={isLoading || isGeneratingPlan}
             placeholder="Describe your idea or reply to the questions above..."
+            draftText={draftText}
+            onDraftChange={onDraftChange}
           />
           <div className="flex items-center justify-between text-[11px] text-[#9CA3AF] mt-2 px-1">
             <span>Press Enter to send, Shift + Enter for new line</span>

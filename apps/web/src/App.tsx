@@ -18,6 +18,11 @@ import { ProjectModal } from './components/domain/ProjectModal';
 import { DeleteProjectModal } from './components/domain/DeleteProjectModal';
 import { ToastProvider, useToast } from './components/ui/Toast';
 import { FullScreenDoodleLoader } from './components/doodles/FullScreenDoodleLoader';
+import { useErrorHandler } from './context/GlobalErrorContext';
+import { useNetworkStatus } from './context/NetworkStatusContext';
+import { GlobalErrorModal } from './components/ui/GlobalErrorModal';
+import { OfflineBanner } from './components/ui/OfflineBanner';
+import { mapError } from './services/errorMapper';
 import { api } from './services/api';
 import {
   fallbackProject,
@@ -53,11 +58,14 @@ import {
 
 function AppContent() {
   const { showToast } = useToast();
+  const { showErrorModal } = useErrorHandler();
+  const { isOnline } = useNetworkStatus();
 
   // Navigation & View State
   const [currentView, setCurrentView] = useState<string>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [chatDraft, setChatDraft] = useState<string>('');
 
   // Social Sharing & Blueprint State
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -193,7 +201,24 @@ function AppContent() {
 
   // Handle Project Selection with full plan and message hydration
   const handleSelectProject = async (projectId: string) => {
-    const found = projects.find((p) => p.id === projectId);
+    let found = projects.find((p) => p.id === projectId);
+    if (!found) {
+      try {
+        found = await api.getProjectById(projectId);
+        if (found) {
+          setProjects((prev) => [found!, ...prev]);
+        }
+      } catch (_) {
+        showToast({
+          type: 'error',
+          title: 'Project Not Found',
+          message: 'The requested project could not be located. Directing to dashboard.',
+        });
+        setCurrentView('dashboard');
+        return;
+      }
+    }
+
     if (found) {
       setActiveProject(found);
       localStorage.setItem('sm_last_active_project_id', projectId);
@@ -218,7 +243,7 @@ function AppContent() {
           setMessages(msgs);
         }
       } catch (_) {
-        // Maintained
+        // Preserved existing state
       }
       setCurrentView('overview');
       localStorage.setItem('sm_last_view', 'overview');
@@ -358,23 +383,43 @@ function AppContent() {
     }
   };
 
-  // Handle AI Chat Messages
-  const handleSendMessage = async (content: string) => {
-    const userMsg: Message = {
-      id: `msg_user_${Date.now()}`,
-      projectId: activeProject.id,
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString(),
-    };
+  // Handle AI Chat Messages with Real Error Tracking & Recovery
+  const handleSendMessage = async (content: string, existingMsgId?: string) => {
+    let msgId = existingMsgId;
+    if (!msgId) {
+      msgId = `msg_user_${Date.now()}`;
+      const userMsg: Message = {
+        id: msgId,
+        projectId: activeProject.id,
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString(),
+        metadata: { status: 'pending' as any },
+      };
+      setMessages((prev) => [...prev, userMsg]);
+    } else {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId
+            ? { ...m, metadata: { ...(m.metadata || {}), status: 'pending' as any } }
+            : m
+        )
+      );
+    }
 
-    setMessages((prev) => [...prev, userMsg]);
     setIsAiLoading(true);
 
     try {
       const res = await api.sendMessage(activeProject.id, content);
       if (res && res.assistantMessage) {
-        setMessages((prev) => [...prev, res.assistantMessage]);
+        setMessages((prev) => {
+          const updated = prev.map((m) =>
+            m.id === msgId
+              ? { ...m, metadata: { ...(m.metadata || {}), status: 'sent' as any } }
+              : m
+          );
+          return [...updated, res.assistantMessage];
+        });
         if (res.assistantMessage.metadata?.stage) {
           const newStage = res.assistantMessage.metadata.stage as any;
           setActiveProject((prev) => ({
@@ -384,55 +429,50 @@ function AppContent() {
           }));
         }
       }
-    } catch (_) {
-      // Local intelligent response fallback
-      setTimeout(() => {
-        const lower = content.toLowerCase();
-        let reply = '';
-        let nextStage: 'idea' | 'requirements' | 'planning' | 'finalize' = 'requirements';
-        let suggestions: string[] = [];
+    } catch (err: any) {
+      const appErr = mapError(err, 'ai-chat');
+      // Mark user message as failed and show inline retry
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId
+            ? {
+                ...m,
+                metadata: {
+                  ...(m.metadata || {}),
+                  status: 'failed' as any,
+                  errorText: appErr.title,
+                },
+              }
+            : m
+        )
+      );
 
-        if (lower.includes('student') || lower.includes('restaurant') || lower.includes('admin') || lower.includes('user')) {
-          nextStage = 'requirements';
-          reply = `Understood. Supporting distinct roles requires granular access control and tailored user journeys.\n\nFor platform delivery:\n1. Should this be a responsive web application, native mobile apps, or cross-platform?\n2. Will the MVP require automated payment processing?`;
-          suggestions = ['Cross-platform mobile and web', 'Require payment gateway', 'Web application first'];
-        } else if (lower.includes('payment') || lower.includes('mobile') || lower.includes('web') || lower.includes('both')) {
-          nextStage = 'planning';
-          reply = `Terrific. Based on your constraints, I have identified the functional specifications and candidate tech stack.\n\nClick "Generate Complete Plan" above or view your project plan anytime to explore suitability scores, 3-tier architecture, and development roadmap.`;
-          suggestions = ['Generate Complete Plan', 'View Project Plan', 'Explore Tech Stack'];
-        } else {
-          nextStage = 'requirements';
-          reply = `That provides great context. To refine technical scope:\n\n1. Who are the primary end users?\n2. What is the most critical feature needed for day one MVP?`;
-          suggestions = ['End users and operations team', 'Real-time ordering & notifications', 'Fast checkout with authentication'];
-        }
-
-        const assistantMsg: Message = {
-          id: `msg_asst_${Date.now()}`,
-          projectId: activeProject.id,
-          role: 'assistant',
-          content: reply,
-          timestamp: new Date().toISOString(),
-          metadata: {
-            stage: nextStage,
-            suggestedResponses: suggestions,
-          },
-        };
-
-        setMessages((prev) => [...prev, assistantMsg]);
-        setActiveProject((prev) => ({
-          ...prev,
-          currentStage: nextStage,
-          updatedAt: new Date().toISOString(),
-        }));
-        setIsAiLoading(false);
-      }, 600);
-      return;
+      // Trigger recovery modal
+      showErrorModal(appErr, {
+        context: 'ai-chat',
+        onRetry: async () => {
+          await handleSendMessage(content, msgId);
+        },
+      });
+    } finally {
+      setIsAiLoading(false);
     }
-
-    setIsAiLoading(false);
   };
 
-  // Generate Complete Plan Action
+  const handleRetryChatMessage = (message: Message) => {
+    handleSendMessage(message.content, message.id);
+  };
+
+  const handleRestoreChatDraft = (content: string) => {
+    setChatDraft(content);
+    showToast({
+      type: 'info',
+      title: 'Draft Restored',
+      message: 'Your message has been placed back in the input field.',
+    });
+  };
+
+  // Generate Complete Plan Action with Recovery Modal
   const handleGeneratePlan = async () => {
     setIsGeneratingPlan(true);
     try {
@@ -482,10 +522,15 @@ function AppContent() {
         setCurrentView('overview');
       }, 500);
     } catch (err: any) {
+      const appErr = mapError(err, 'ai-planning');
       showToast({
         type: 'error',
-        title: 'Plan Generation Failed',
-        message: err?.message || 'Unable to generate plan. Please try again.',
+        title: appErr.title,
+        message: appErr.message,
+      });
+      showErrorModal(appErr, {
+        context: 'ai-planning',
+        onRetry: handleGeneratePlan,
       });
     } finally {
       setIsGeneratingPlan(false);
@@ -640,36 +685,49 @@ function AppContent() {
   // Split-screen full-page auth & onboarding views (outside standard shell)
   if (currentView === 'signin') {
     return (
-      <SignInPage
-        onSuccess={handleAuthSuccess}
-        onNavigateSignUp={() => setCurrentView('signup')}
-        onNavigateHome={() => setCurrentView('landing')}
-      />
+      <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
+        <OfflineBanner />
+        <SignInPage
+          onSuccess={handleAuthSuccess}
+          onNavigateSignUp={() => setCurrentView('signup')}
+          onNavigateHome={() => setCurrentView('landing')}
+        />
+        <GlobalErrorModal />
+      </div>
     );
   }
 
   if (currentView === 'signup') {
     return (
-      <SignUpPage
-        onSuccess={handleAuthSuccess}
-        onNavigateSignIn={() => setCurrentView('signin')}
-        onNavigateHome={() => setCurrentView('landing')}
-      />
+      <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
+        <OfflineBanner />
+        <SignUpPage
+          onSuccess={handleAuthSuccess}
+          onNavigateSignIn={() => setCurrentView('signin')}
+          onNavigateHome={() => setCurrentView('landing')}
+        />
+        <GlobalErrorModal />
+      </div>
     );
   }
 
   if (currentView === 'onboarding') {
     return (
-      <OnboardingStepperPage
-        currentUser={currentUser}
-        onComplete={handleOnboardingComplete}
-        onSkip={() => setCurrentView('dashboard')}
-      />
+      <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
+        <OfflineBanner />
+        <OnboardingStepperPage
+          currentUser={currentUser}
+          onComplete={handleOnboardingComplete}
+          onSkip={() => setCurrentView('dashboard')}
+        />
+        <GlobalErrorModal />
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
+      <OfflineBanner />
       {/* Full-Screen Doodle Loading Experience */}
       <FullScreenDoodleLoader
         isLoading={isInitialLoading}
@@ -801,6 +859,10 @@ function AppContent() {
               onGeneratePlan={handleGeneratePlan}
               isGeneratingPlan={isGeneratingPlan}
               onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+              onRetryMessage={handleRetryChatMessage}
+              onRestoreDraft={handleRestoreChatDraft}
+              draftText={chatDraft}
+              onDraftChange={setChatDraft}
             />
           )}
 
@@ -865,6 +927,9 @@ function AppContent() {
         project={activeProject}
         blueprint={blueprint}
       />
+
+      {/* Centralized Global Error Modal */}
+      <GlobalErrorModal />
     </div>
   );
 }
