@@ -35,3 +35,23 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
     });
   }
 };
+
+export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as {
+      id: string;
+      email: string;
+      role?: string;
+    };
+    req.user = decoded;
+  } catch (_) {
+    // Guest or expired token, proceed without attaching user
+  }
+  next();
+};

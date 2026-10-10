@@ -71,14 +71,48 @@ function AppContent() {
   const [resources, setResources] = useState<ResourceItem[]>(fallbackResources);
   const [blueprint, setBlueprint] = useState<ProjectBlueprint>(fallbackBlueprint);
 
-  // Attempt to load from API backend on mount
+  // Attempt to load from API backend on mount with workflow continuity
   useEffect(() => {
     const initData = async () => {
       try {
+        if (api.getToken()) {
+          try {
+            const me = await api.getMe();
+            if (me) setCurrentUser(me);
+          } catch (_) {}
+        }
+
         const fetchedProjects = await api.getProjects();
         if (fetchedProjects && fetchedProjects.length > 0) {
           setProjects(fetchedProjects);
-          setActiveProject(fetchedProjects[0]);
+          const savedProjectId = localStorage.getItem('sm_last_active_project_id');
+          const targetProj = fetchedProjects.find((p) => p.id === savedProjectId) || fetchedProjects[0];
+          setActiveProject(targetProj);
+
+          const savedView = localStorage.getItem('sm_last_view');
+          if (savedView && ['dashboard', 'overview', 'chat', 'connect', 'resources'].includes(savedView)) {
+            setCurrentView(savedView);
+          }
+
+          // Hydrate plan and conversation for active project
+          try {
+            const [plan, msgs] = await Promise.all([
+              api.getProjectPlan(targetProj.id).catch(() => null),
+              api.getMessages(targetProj.id).catch(() => []),
+            ]);
+            if (plan) {
+              if (plan.requirements?.length) setRequirements(plan.requirements);
+              const techs = plan.technologies || (plan as any).techStack;
+              if (techs?.length) setTechnologies(techs);
+              if (plan.comparisons) setComparisons(plan.comparisons);
+              if (plan.architecture?.length) setArchitecture(plan.architecture);
+              if (plan.roadmap?.length) setRoadmap(plan.roadmap);
+              if (plan.blueprint) setBlueprint(plan.blueprint);
+            }
+            if (msgs && msgs.length > 0) {
+              setMessages(msgs);
+            }
+          } catch (_) {}
         }
       } catch (_) {
         // Fallback initialized
@@ -87,58 +121,76 @@ function AppContent() {
     initData();
   }, []);
 
-  // Handle Project Selection
+  // Handle Project Selection with full plan and message hydration
   const handleSelectProject = async (projectId: string) => {
     const found = projects.find((p) => p.id === projectId);
     if (found) {
       setActiveProject(found);
+      localStorage.setItem('sm_last_active_project_id', projectId);
       try {
-        const plan = await api.getProjectPlan(projectId);
+        const [plan, msgs] = await Promise.all([
+          api.getProjectPlan(projectId).catch(() => null),
+          api.getMessages(projectId).catch(() => []),
+        ]);
         if (plan) {
           if (plan.requirements?.length) setRequirements(plan.requirements);
-          if (plan.technologies?.length) setTechnologies(plan.technologies);
+          const techs = plan.technologies || (plan as any).techStack;
+          if (techs?.length) setTechnologies(techs);
           if (plan.comparisons) setComparisons(plan.comparisons);
           if (plan.architecture?.length) setArchitecture(plan.architecture);
           if (plan.roadmap?.length) setRoadmap(plan.roadmap);
           if (plan.blueprint) setBlueprint(plan.blueprint);
         }
+        if (msgs && msgs.length > 0) {
+          setMessages(msgs);
+        }
       } catch (_) {
-        // Using current domain state
+        // Maintained
       }
       setCurrentView('overview');
+      localStorage.setItem('sm_last_view', 'overview');
     }
   };
 
-  // Create New Project Flow
-  const handleNewProject = () => {
-    const newId = `proj_${Date.now()}`;
-    const newProj: Project = {
-      id: newId,
-      userId: currentUser?.id || 'usr_demo_01',
-      name: 'New Product Concept',
-      description: 'Describe your concept to start scoping requirements and architecture.',
-      status: 'draft',
-      currentStage: 'idea',
-      summary: {
-        projectType: 'Web & Mobile Application',
-        primaryUsers: ['End Users', 'Administrators'],
-        industry: 'Software & Technology',
-        keyFeatures: ['User Onboarding', 'Core Dashboard', 'Secure API'],
-        estimatedComplexity: 'Medium',
-        estimatedTimeline: '2–4 months',
-        goals: ['Validate market demand', 'Launch production MVP'],
-        targetAudience: ['Target Users', 'Operations Team'],
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  // Create New Project Flow with backend persistence
+  const handleNewProject = async () => {
+    let newProj: Project;
+    try {
+      newProj = await api.createProject(
+        'New Product Concept',
+        'Describe your concept to start scoping requirements and architecture.'
+      );
+    } catch (_) {
+      const newId = `proj_${Date.now()}`;
+      newProj = {
+        id: newId,
+        userId: currentUser?.id || 'usr_demo_01',
+        name: 'New Product Concept',
+        description: 'Describe your concept to start scoping requirements and architecture.',
+        status: 'draft',
+        currentStage: 'idea',
+        summary: {
+          projectType: 'Web & Mobile Application',
+          primaryUsers: ['End Users', 'Administrators'],
+          industry: 'Software & Technology',
+          keyFeatures: ['User Onboarding', 'Core Dashboard', 'Secure API'],
+          estimatedComplexity: 'Medium',
+          estimatedTimeline: '2–4 months',
+          goals: ['Validate market demand', 'Launch production MVP'],
+          targetAudience: ['Target Users', 'Operations Team'],
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
 
     setProjects([newProj, ...projects]);
     setActiveProject(newProj);
+    localStorage.setItem('sm_last_active_project_id', newProj.id);
 
     const initialMsg: Message = {
       id: `msg_${Date.now()}`,
-      projectId: newId,
+      projectId: newProj.id,
       role: 'assistant',
       content: `Welcome to StackMatch! Tell me about "${newProj.name}" in your own words. Who is it for, and what problem does it solve?`,
       timestamp: new Date().toISOString(),
@@ -154,6 +206,7 @@ function AppContent() {
 
     setMessages([initialMsg]);
     setCurrentView('chat');
+    localStorage.setItem('sm_last_view', 'chat');
     showToast({
       type: 'info',
       title: 'Scoping Session Started',
@@ -350,6 +403,12 @@ function AppContent() {
     });
   };
 
+  const navigateTo = (view: string) => {
+    const target = view === 'workspace' ? 'dashboard' : view;
+    setCurrentView(target);
+    localStorage.setItem('sm_last_view', target);
+  };
+
   const isWorkspaceView = ['workspace', 'chat', 'overview', 'projects', 'dashboard', 'connect'].includes(currentView);
 
   return (
@@ -358,13 +417,7 @@ function AppContent() {
       <Navbar
         currentUser={currentUser}
         currentView={currentView}
-        onNavigate={(view) => {
-          if (view === 'workspace') {
-            setCurrentView('dashboard');
-          } else {
-            setCurrentView(view);
-          }
-        }}
+        onNavigate={navigateTo}
         onOpenAuth={(mode) => {
           setAuthModalMode(mode);
           setAuthModalOpen(true);
@@ -378,12 +431,12 @@ function AppContent() {
           <Sidebar
             currentNav={currentView}
             onSelectNav={(nav) => {
-              if (nav === 'dashboard' || nav === 'projects') setCurrentView('dashboard');
-              else if (nav === 'overview') setCurrentView('overview');
-              else if (nav === 'chat') setCurrentView('chat');
-              else if (nav === 'connect') setCurrentView('connect');
-              else if (nav === 'resources') setCurrentView('resources');
-              else setCurrentView(nav);
+              if (nav === 'dashboard' || nav === 'projects') navigateTo('dashboard');
+              else if (nav === 'overview') navigateTo('overview');
+              else if (nav === 'chat') navigateTo('chat');
+              else if (nav === 'connect') navigateTo('connect');
+              else if (nav === 'resources') navigateTo('resources');
+              else navigateTo(nav);
             }}
             onNewProject={handleNewProject}
             projects={projects}

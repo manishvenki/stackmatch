@@ -26,6 +26,8 @@ import { ArchitectureDiagram } from '../components/domain/ArchitectureDiagram';
 import { RoadmapTimeline } from '../components/domain/RoadmapTimeline';
 import { ResourceCard } from '../components/domain/ResourceCard';
 import { EditRequirementModal } from '../components/domain/EditRequirementModal';
+import { ExportBlueprintModal } from '../components/domain/ExportBlueprintModal';
+import { useToast } from '../components/ui/Toast';
 import {
   Project,
   Requirement,
@@ -81,6 +83,8 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   // Requirement Modal State
   const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const { showToast } = useToast();
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -730,14 +734,14 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="neutral">Phase 2 Preview Ready</Badge>
+                <Badge variant="highlight">Approved Spec</Badge>
                 <Button
                   variant="primary"
                   size="md"
                   leftIcon={<FileCheck className="w-4 h-4" />}
-                  onClick={() => alert('PDF Blueprint compilation engine is scheduled for Phase 3. Real-time blueprint preview is live!')}
+                  onClick={() => setIsExportModalOpen(true)}
                 >
-                  Download PDF
+                  Export Blueprint
                 </Button>
               </div>
             </div>
@@ -807,12 +811,12 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                     variant="primary"
                     size="sm"
                     className="w-full text-xs font-semibold"
-                    onClick={() => alert('PDF generation is scheduled for Phase 3. Live blueprint data is saved in your project state.')}
+                    onClick={() => setIsExportModalOpen(true)}
                   >
-                    Download PDF Blueprint
+                    Export Blueprint
                   </Button>
                   <p className="text-[10px] text-center text-[#9CA3AF] mt-2">
-                    PDF compilation engine scheduled for Phase 3
+                    Print to PDF, Markdown (.md), or JSON Specification (.json)
                   </p>
                 </div>
               </Card>
@@ -876,6 +880,25 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
           }}
         />
       )}
+
+      {/* Export Blueprint Modal */}
+      <ExportBlueprintModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        project={project}
+        requirements={requirements}
+        technologies={technologies}
+        architectureNodes={architectureNodes}
+        roadmapPhases={roadmapPhases}
+        blueprint={blueprint}
+        onNotifySuccess={(msg) =>
+          showToast({
+            type: 'success',
+            title: 'Blueprint Exported',
+            message: msg,
+          })
+        }
+      />
     </div>
   );
 };

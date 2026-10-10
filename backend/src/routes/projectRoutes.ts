@@ -19,8 +19,12 @@ import {
   getBlueprint
 } from '../controllers/projectController';
 import { getMessages, postMessage } from '../controllers/messageController';
+import { optionalAuth } from '../middleware/auth';
 
 const router = Router();
+
+// Apply optionalAuth across project routes to identify authenticated requests
+router.use(optionalAuth);
 
 // Project collection & item routes
 router.get('/', getProjects);

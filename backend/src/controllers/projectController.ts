@@ -128,16 +128,21 @@ export const analyzeIdea = async (req: Request, res: Response) => {
       });
     }
 
+    const cleanPrompt = prompt.trim().slice(0, 4000);
     const project = await store.getProjectById(id);
-    const projectName = project ? project.name : 'Project';
-    const analysis = await aiPlanningService.analyzeIdea(prompt, projectName);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: `Project with ID ${id} not found.`
+      });
+    }
 
-    // If project exists, update summary goals & target audience
-    if (project) {
-      await store.updateProject(id, {
-        summary: {
-          projectType: analysis.platformRequirements.join(' + ') || 'Web & Mobile',
-          primaryUsers: analysis.targetUsers,
+    const analysis = await aiPlanningService.analyzeIdea(cleanPrompt, project.name);
+
+    await store.updateProject(id, {
+      summary: {
+        projectType: analysis.platformRequirements.join(' + ') || 'Web & Mobile',
+        primaryUsers: analysis.targetUsers,
           industry: 'Software & Technology',
           keyFeatures: ['User Onboarding', 'Core Workflows', 'Role-Based Dashboard'],
           estimatedComplexity: 'Medium',
@@ -149,7 +154,6 @@ export const analyzeIdea = async (req: Request, res: Response) => {
           userRoles: analysis.targetUsers
         }
       });
-    }
 
     return res.json({
       success: true,

@@ -11,7 +11,7 @@ import {
   Message
 } from '../types';
 
-const API_BASE = '/api/v1';
+const API_BASE = ((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api/v1';
 
 class ApiClient {
   private token: string | null = null;
@@ -43,12 +43,18 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutDuration = 20000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
     try {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
+        signal: controller.signal,
         headers
       });
 
+      clearTimeout(timeoutId);
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -57,7 +63,11 @@ class ApiClient {
 
       return json.data !== undefined ? json.data : json;
     } catch (err: any) {
-      console.warn(`API call ${endpoint} failed, checking fallback:`, err.message);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new Error('Request timed out. Please check your connection and try again.');
+      }
+      console.warn(`API call ${endpoint} failed:`, err.message);
       throw err;
     }
   }

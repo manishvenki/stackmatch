@@ -43,3 +43,28 @@
 .transition-subtle {
   transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Print Styles for Executive Blueprint PDF Generation */
+@media print {
+  header,
+  aside,
+  nav,
+  button,
+  .no-print,
+  [role="status"] {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+}
