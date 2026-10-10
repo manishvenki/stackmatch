@@ -449,7 +449,16 @@ function AppContent() {
       <Navbar
         currentUser={currentUser}
         currentView={currentView}
+        isWorkspace={isWorkspaceView}
+        activeProjectName={activeProject?.name}
         onNavigate={navigateTo}
+        onNewProject={handleNewProject}
+        onLogout={() => {
+          setCurrentUser(null);
+          api.logout();
+          showToast({ type: 'info', title: 'Signed Out', message: 'You have been signed out.' });
+        }}
+        onToggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
         onOpenAuth={(mode) => {
           setAuthModalMode(mode);
           setAuthModalOpen(true);

@@ -148,29 +148,32 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
       <div className="bg-white border-b border-[#E5E7EB] px-4 sm:px-8 pt-6 pb-0 shrink-0">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Badge variant="highlight" size="sm">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
                   {project.currentStage.toUpperCase()}
-                </Badge>
-                <span className="text-xs text-[#16A34A] font-semibold bg-[#DCFCE7] px-2 py-0.5 rounded-full">
-                  Verified Plan
+                </span>
+                <span className="text-[11px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full border border-[#BBF7D0] inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-[#16A34A]" />
+                  Verified Architecture Plan
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
                 {project.name}
               </h1>
-              <p className="text-xs sm:text-sm text-[#687280] mt-1 max-w-2xl">
+              <p className="text-xs sm:text-sm text-[#4B5563] mt-1.5 max-w-2xl leading-relaxed">
                 {project.description}
               </p>
             </div>
 
             {/* Header Action Buttons */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
               <Button
                 variant="secondary"
                 size="sm"
-                leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
+                className="h-9 text-xs font-semibold"
+                leftIcon={<MessageSquare className="w-4 h-4 text-[#374151]" />}
                 onClick={onOpenChat}
               >
                 AI Scoping Chat
@@ -178,7 +181,8 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
               <Button
                 variant="primary"
                 size="sm"
-                leftIcon={<FileCheck className="w-3.5 h-3.5" />}
+                className="h-9 text-xs font-bold shadow-xs"
+                leftIcon={<FileCheck className="w-4 h-4 text-white" />}
                 onClick={() => setActiveTab('blueprint')}
               >
                 Project Blueprint
