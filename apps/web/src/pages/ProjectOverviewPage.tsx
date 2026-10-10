@@ -150,9 +150,9 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#F9FAFB] overflow-y-auto">
+    <div className="flex-1 flex flex-col h-full bg-[#F9FAFB] overflow-y-auto print:h-auto print:overflow-visible print:bg-white">
       {/* Page Header */}
-      <div className="bg-white border-b border-[#E5E7EB] px-4 sm:px-8 pt-6 pb-0 shrink-0">
+      <div className="bg-white border-b border-[#E5E7EB] px-4 sm:px-8 pt-6 pb-0 shrink-0 print:hidden">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5">
             <div className="min-w-0">
@@ -214,10 +214,10 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
       </div>
 
       {/* Main Content Body */}
-      <div className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+      <div className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none">
         {/* 1. OVERVIEW TAB */}
         {activeTab === 'overview' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Project Summary Card */}
               <Card className="lg:col-span-2 space-y-4">
@@ -568,7 +568,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 2. REQUIREMENTS TAB */}
         {activeTab === 'requirements' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-[#111827]">Project Requirements</h2>
@@ -648,7 +648,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 3. TECH STACK TAB */}
         {activeTab === 'tech-stack' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-[#111827]">Recommended Tech Stack</h2>
@@ -683,7 +683,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 4. TECHNOLOGY DETAILS TAB */}
         {activeTab === 'tech-details' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             {/* Technology Selector Bar */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#E5E7EB]">
               <span className="text-xs font-semibold text-[#687280] uppercase tracking-wider shrink-0 mr-2">
@@ -929,7 +929,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 5. COMPARISON TAB */}
         {activeTab === 'comparison' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div>
               <h2 className="text-xl font-bold text-[#111827]">{comparisonGroup.title}</h2>
               <p className="text-xs text-[#687280]">
@@ -946,7 +946,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 6. ARCHITECTURE TAB */}
         {activeTab === 'architecture' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div>
               <h2 className="text-xl font-bold text-[#111827]">System Architecture</h2>
               <p className="text-xs text-[#687280]">
@@ -962,7 +962,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 7. ROADMAP TAB */}
         {activeTab === 'roadmap' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div>
               <h2 className="text-xl font-bold text-[#111827]">Development Roadmap</h2>
               <p className="text-xs text-[#687280]">
@@ -975,7 +975,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
         {/* 8. RESOURCES TAB */}
         {activeTab === 'resources' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6 animate-in fade-in duration-200 print:hidden">
             <div>
               <h2 className="text-xl font-bold text-[#111827]">Learning Resources</h2>
               <p className="text-xs text-[#687280]">
@@ -991,7 +991,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
         )}
 
         {/* 9. BLUEPRINT PREVIEW TAB */}
-        {activeTab === 'blueprint' && (
+        {activeTab === 'blueprint' ? (
           <div className="space-y-8 animate-in fade-in duration-200">
             <DynamicBlueprintDocument
               project={project}
@@ -1038,6 +1038,18 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 </Button>
               )}
             </div>
+          </div>
+        ) : (
+          <div className="hidden print:block">
+            <DynamicBlueprintDocument
+              project={project}
+              blueprint={blueprint}
+              requirements={requirements}
+              technologies={technologies}
+              architectureNodes={architectureNodes}
+              roadmapPhases={roadmapPhases}
+              resources={resources}
+            />
           </div>
         )}
       </div>

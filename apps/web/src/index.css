@@ -53,27 +53,108 @@
   scrollbar-width: none;
 }
 
-/* Print Styles for Executive Blueprint PDF Generation */
+/* Print Styles for Executive Blueprint Multi-Page PDF Generation */
+@page {
+  size: A4 portrait;
+  margin: 12mm 15mm 16mm 15mm;
+}
+
 @media print {
+  /* Hide non-printable app UI */
   header,
   aside,
   nav,
   button,
   .no-print,
-  [role="status"] {
+  .print\:hidden,
+  [role="status"],
+  [role="dialog"] {
     display: none !important;
   }
 
+  html,
   body {
     background: #FFFFFF !important;
-    color: #000000 !important;
+    color: #111827 !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  .print-page {
+  /* Break through all parent overflow-hidden and fixed-height viewports */
+  #root,
+  #root > div,
+  .h-screen,
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  main {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Blueprint Document print styling */
+  .blueprint-print-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
     box-shadow: none !important;
     border: none !important;
-    padding: 0 !important;
+  }
+
+  /* Individual sections and cards pagination rules */
+  .blueprint-section {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    margin-bottom: 22pt !important;
+  }
+
+  .blueprint-section-header {
+    page-break-after: avoid !important;
+    break-after: avoid-page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .blueprint-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    margin-bottom: 8pt !important;
+  }
+
+  /* Prevent headings orphan / widow */
+  h1, h2, h3, h4, h5 {
+    page-break-after: avoid !important;
+    break-after: avoid-page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Table styling for print */
+  table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  thead {
+    display: table-header-group !important;
   }
 }
+

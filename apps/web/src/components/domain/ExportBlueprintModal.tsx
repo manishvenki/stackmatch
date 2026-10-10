@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Printer, FileText, Code2, CheckCircle2 } from 'lucide-react';
+import { X, Download, Printer, FileText, Code2, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import {
@@ -10,6 +10,7 @@ import {
   RoadmapPhase,
   ProjectBlueprint,
 } from '../../types';
+import { exportBlueprintToPdf } from '../../utils/pdfExport';
 
 export interface ExportBlueprintModalProps {
   isOpen: boolean;
@@ -34,22 +35,47 @@ export const ExportBlueprintModal: React.FC<ExportBlueprintModalProps> = ({
   blueprint,
   onNotifySuccess,
 }) => {
-  const [selectedFormat, setSelectedFormat] = useState<'print' | 'markdown' | 'json'>('print');
+  const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'print' | 'markdown' | 'json'>('pdf');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
 
   if (!isOpen) return null;
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (isExporting) return;
+
     const slug = (project.name || 'stackmatch-blueprint')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+
+    if (selectedFormat === 'pdf') {
+      setIsExporting(true);
+      setExportProgress('Starting multi-page PDF generation...');
+      try {
+        await exportBlueprintToPdf('stackmatch-blueprint-doc', {
+          filename: `${slug}-blueprint.pdf`,
+          onProgress: (stage) => setExportProgress(stage),
+        });
+        if (onNotifySuccess) {
+          onNotifySuccess(`Downloaded complete multi-page PDF: ${slug}-blueprint.pdf`);
+        }
+        onClose();
+      } catch (err) {
+        console.error('Failed to export PDF:', err);
+        setExportProgress('Generation failed. Please try Print to PDF instead.');
+      } finally {
+        setIsExporting(false);
+      }
+      return;
+    }
 
     if (selectedFormat === 'print') {
       onClose();
       setTimeout(() => {
         window.print();
         if (onNotifySuccess) {
-          onNotifySuccess('Print dialog opened. Select "Save as PDF" to save your blueprint.');
+          onNotifySuccess('Print dialog opened. Select "Save as PDF" to save the full blueprint.');
         }
       }, 300);
       return;
@@ -206,7 +232,8 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
           </div>
           <button
             onClick={onClose}
-            className="text-[#9CA3AF] hover:text-[#111827] p-1.5 rounded-lg transition-subtle cursor-pointer"
+            disabled={isExporting}
+            className="text-[#9CA3AF] hover:text-[#111827] p-1.5 rounded-lg transition-subtle cursor-pointer disabled:opacity-50"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
@@ -216,7 +243,37 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
         {/* Options */}
         <div className="p-6 space-y-3">
           <label
-            onClick={() => setSelectedFormat('print')}
+            onClick={() => !isExporting && setSelectedFormat('pdf')}
+            className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+              selectedFormat === 'pdf'
+                ? 'border-[#2563EB] bg-[#EFF6FF]/40 shadow-2xs ring-1 ring-[#2563EB]/20'
+                : 'border-[#E5E7EB] hover:border-[#D1D5DB]'
+            }`}
+          >
+            <input
+              type="radio"
+              name="exportFormat"
+              checked={selectedFormat === 'pdf'}
+              onChange={() => setSelectedFormat('pdf')}
+              disabled={isExporting}
+              className="mt-1 text-[#2563EB] focus:ring-0"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Download className="w-4 h-4 text-[#2563EB]" />
+                <span className="text-xs font-bold text-[#111827]">Multi-Page PDF Download (.pdf)</span>
+                <Badge variant="highlight" size="sm">
+                  Recommended
+                </Badge>
+              </div>
+              <p className="text-[11px] text-[#687280] mt-0.5">
+                Complete multi-page PDF with all sections, technologies, logos, and architecture included.
+              </p>
+            </div>
+          </label>
+
+          <label
+            onClick={() => !isExporting && setSelectedFormat('print')}
             className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
               selectedFormat === 'print'
                 ? 'border-[#111827] bg-[#F9FAFB] shadow-2xs'
@@ -228,24 +285,22 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
               name="exportFormat"
               checked={selectedFormat === 'print'}
               onChange={() => setSelectedFormat('print')}
+              disabled={isExporting}
               className="mt-1 text-[#111827] focus:ring-0"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-[#111827]" />
-                <span className="text-xs font-bold text-[#111827]">Print / Save as PDF</span>
-                <Badge variant="highlight" size="sm">
-                  Recommended
-                </Badge>
+                <span className="text-xs font-bold text-[#111827]">Print to PDF (Vector Print)</span>
               </div>
               <p className="text-[11px] text-[#687280] mt-0.5">
-                Formatted executive specification layout ready to save or print.
+                Native browser print dialog with full CSS pagination and selectable vector typography.
               </p>
             </div>
           </label>
 
           <label
-            onClick={() => setSelectedFormat('markdown')}
+            onClick={() => !isExporting && setSelectedFormat('markdown')}
             className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
               selectedFormat === 'markdown'
                 ? 'border-[#111827] bg-[#F9FAFB] shadow-2xs'
@@ -257,6 +312,7 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
               name="exportFormat"
               checked={selectedFormat === 'markdown'}
               onChange={() => setSelectedFormat('markdown')}
+              disabled={isExporting}
               className="mt-1 text-[#111827] focus:ring-0"
             />
             <div className="flex-1">
@@ -271,7 +327,7 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
           </label>
 
           <label
-            onClick={() => setSelectedFormat('json')}
+            onClick={() => !isExporting && setSelectedFormat('json')}
             className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
               selectedFormat === 'json'
                 ? 'border-[#111827] bg-[#F9FAFB] shadow-2xs'
@@ -283,6 +339,7 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
               name="exportFormat"
               checked={selectedFormat === 'json'}
               onChange={() => setSelectedFormat('json')}
+              disabled={isExporting}
               className="mt-1 text-[#111827] focus:ring-0"
             />
             <div className="flex-1">
@@ -295,20 +352,38 @@ ${p.deliverables.map((d) => `  - [${d.completed ? 'x' : ' '}] ${d.title}${d.prio
               </p>
             </div>
           </label>
+
+          {isExporting && exportProgress && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 flex items-center gap-2.5 text-xs text-blue-700 animate-pulse">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-blue-600" />
+              <span>{exportProgress}</span>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[#E5E7EB] flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={isExporting}>
             Cancel
           </Button>
           <Button
             variant="accent"
             size="sm"
             onClick={handleExport}
-            leftIcon={<Download className="w-3.5 h-3.5" />}
+            disabled={isExporting}
+            leftIcon={
+              isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )
+            }
           >
-            {selectedFormat === 'print' ? 'Open Print Dialog' : 'Download File'}
+            {isExporting
+              ? 'Generating PDF...'
+              : selectedFormat === 'print'
+              ? 'Open Print Dialog'
+              : 'Download File'}
           </Button>
         </div>
       </div>

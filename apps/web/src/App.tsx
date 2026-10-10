@@ -102,6 +102,15 @@ function AppContent() {
   useEffect(() => {
     const initData = async () => {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryView = urlParams.get('view');
+        if (queryView && ['landing', 'blueprint', 'overview', 'dashboard', 'chat', 'features', 'how-it-works'].includes(queryView)) {
+          setCurrentView(queryView);
+          if (queryView === 'blueprint') {
+            setOverviewInitialTab('blueprint');
+          }
+        }
+
         let loggedUser: User | null = null;
         if (api.getToken()) {
           try {
