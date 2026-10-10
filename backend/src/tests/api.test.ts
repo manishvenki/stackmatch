@@ -2,7 +2,7 @@ import http from 'http';
 import { createApp } from '../app';
 
 const runTests = async () => {
-  console.log('--- Starting StackMatch Backend Foundation Tests ---');
+  console.log('--- Starting StackMatch Backend Foundation & Phase 2 AI Tests ---');
 
   const app = createApp();
   const server = http.createServer(app);
@@ -90,35 +90,74 @@ const runTests = async () => {
     const sampleProjectRes = await request('GET', '/api/v1/projects/proj_college_food_01');
     assert(sampleProjectRes.status === 200 && sampleProjectRes.data?.data?.name === 'College Food Ordering Platform', 'GET /api/v1/projects/:id retrieves seeded sample project');
 
-    // 9. Domain data endpoints
-    const reqsRes = await request('GET', '/api/v1/projects/proj_college_food_01/requirements');
+    // 9. Phase 2 AI Idea Analysis
+    const ideaAnalysisRes = await request('POST', `/api/v1/projects/${newProjectId}/analyze-idea`, {
+      prompt: 'A mobile food ordering app with campus cafeteria pickup and UPI payment'
+    });
+    assert(
+      ideaAnalysisRes.status === 200 &&
+      ideaAnalysisRes.data?.data?.problemStatement &&
+      ideaAnalysisRes.data?.data?.followUpQuestions?.length > 0,
+      'POST /api/v1/projects/:id/analyze-idea extracts structured problem statement & follow-up questions'
+    );
+
+    // 10. Phase 2 AI Full Plan Generation
+    const planGenRes = await request('POST', `/api/v1/projects/${newProjectId}/generate-plan`, {});
+    assert(
+      planGenRes.status === 200 &&
+      planGenRes.data?.data?.requirements?.length > 0 &&
+      planGenRes.data?.data?.techStack?.length > 0 &&
+      planGenRes.data?.data?.architecture?.length > 0 &&
+      planGenRes.data?.data?.roadmap?.length > 0,
+      'POST /api/v1/projects/:id/generate-plan synthesizes complete requirements, tech stack, architecture, and roadmap'
+    );
+
+    // 11. Domain data endpoints
+    const reqsRes = await request('GET', `/api/v1/projects/${newProjectId}/requirements`);
     assert(reqsRes.status === 200 && Array.isArray(reqsRes.data?.data) && reqsRes.data?.data.length > 0, 'GET /api/v1/projects/:id/requirements returns requirements list');
 
-    const techRes = await request('GET', '/api/v1/projects/proj_college_food_01/tech-stack');
+    // 12. Update requirement
+    const firstReqId = reqsRes.data?.data[0].id;
+    const updateReqRes = await request('PUT', `/api/v1/projects/${newProjectId}/requirements/${firstReqId}`, {
+      title: 'Enhanced Authentication with Passkeys',
+      priority: 'high'
+    });
+    assert(updateReqRes.status === 200 && updateReqRes.data?.data?.title === 'Enhanced Authentication with Passkeys', 'PUT /api/v1/projects/:id/requirements/:reqId updates requirement');
+
+    // 13. Delete requirement
+    const deleteReqRes = await request('DELETE', `/api/v1/projects/${newProjectId}/requirements/${firstReqId}`);
+    assert(deleteReqRes.status === 200 && deleteReqRes.data?.success === true, 'DELETE /api/v1/projects/:id/requirements/:reqId deletes requirement');
+
+    const techRes = await request('GET', `/api/v1/projects/${newProjectId}/tech-stack`);
     assert(techRes.status === 200 && techRes.data?.data?.some((t: any) => t.name === 'React'), 'GET /api/v1/projects/:id/tech-stack returns recommended technologies');
 
-    const archRes = await request('GET', '/api/v1/projects/proj_college_food_01/architecture');
+    const archRes = await request('GET', `/api/v1/projects/${newProjectId}/architecture`);
     assert(archRes.status === 200 && archRes.data?.data?.length > 0, 'GET /api/v1/projects/:id/architecture returns architecture nodes');
 
-    const roadRes = await request('GET', '/api/v1/projects/proj_college_food_01/roadmap');
+    const roadRes = await request('GET', `/api/v1/projects/${newProjectId}/roadmap`);
     assert(roadRes.status === 200 && roadRes.data?.data?.length === 4, 'GET /api/v1/projects/:id/roadmap returns 4 development phases');
 
-    const blueprintRes = await request('GET', '/api/v1/projects/proj_college_food_01/blueprint');
+    const blueprintRes = await request('GET', `/api/v1/projects/${newProjectId}/blueprint`);
     assert(blueprintRes.status === 200 && blueprintRes.data?.data?.sections?.length > 0, 'GET /api/v1/projects/:id/blueprint returns blueprint preview data');
 
-    // 10. Conversation & Message post
+    // 14. Conversation & Message post with AI intelligence
     const msgPostRes = await request('POST', `/api/v1/projects/${newProjectId}/messages`, {
-      content: 'We need support for both web and mobile apps.'
+      content: 'We need support for both web and mobile apps with UPI payments.'
     });
-    assert(msgPostRes.status === 201 && msgPostRes.data?.data?.assistantMessage?.content, 'POST /api/v1/projects/:id/messages generates AI assistant reply and advances stage');
+    assert(
+      msgPostRes.status === 201 &&
+      msgPostRes.data?.data?.assistantMessage?.content &&
+      msgPostRes.data?.data?.assistantMessage?.metadata?.stage,
+      'POST /api/v1/projects/:id/messages generates AI assistant reply, suggestions, and updates stage'
+    );
 
-    // 11. Project update
+    // 15. Project update
     const updateRes = await request('PATCH', `/api/v1/projects/${newProjectId}`, {
       status: 'in-progress'
     });
     assert(updateRes.status === 200 && updateRes.data?.data?.status === 'in-progress', 'PATCH /api/v1/projects/:id updates project');
 
-    // 12. Project deletion
+    // 16. Project deletion
     const deleteRes = await request('DELETE', `/api/v1/projects/${newProjectId}`);
     assert(deleteRes.status === 200, 'DELETE /api/v1/projects/:id deletes project');
 

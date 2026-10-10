@@ -5,8 +5,12 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  analyzeIdea,
+  generatePlan,
   getRequirements,
   createRequirement,
+  updateRequirement,
+  deleteRequirement,
   getTechStack,
   getComparisons,
   getArchitecture,
@@ -25,6 +29,10 @@ router.get('/:id', getProjectById);
 router.patch('/:id', updateProject);
 router.delete('/:id', deleteProject);
 
+// AI Planning Intelligence endpoints
+router.post('/:id/analyze-idea', analyzeIdea);
+router.post('/:id/generate-plan', generatePlan);
+
 // Conversation & message routes
 router.get('/:id/messages', getMessages);
 router.post('/:id/messages', postMessage);
@@ -32,6 +40,9 @@ router.post('/:id/messages', postMessage);
 // Project domain details
 router.get('/:id/requirements', getRequirements);
 router.post('/:id/requirements', createRequirement);
+router.put('/:id/requirements/:reqId', updateRequirement);
+router.delete('/:id/requirements/:reqId', deleteRequirement);
+
 router.get('/:id/tech-stack', getTechStack);
 router.get('/:id/comparisons', getComparisons);
 router.get('/:id/architecture', getArchitecture);

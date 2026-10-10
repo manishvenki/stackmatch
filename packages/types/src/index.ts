@@ -28,6 +28,10 @@ export interface ProjectSummary {
   estimatedTimeline: string;
   goals: string[];
   targetAudience: string[];
+  constraints?: string[];
+  assumptions?: string[];
+  exclusions?: string[];
+  userRoles?: string[];
 }
 
 export interface Project {
@@ -50,6 +54,9 @@ export interface Requirement {
   type: RequirementType;
   priority: PriorityLevel;
   category?: string;
+  userStory?: string;
+  acceptanceCriteria?: string[];
+  isMvpScope?: boolean;
 }
 
 export interface TechKeyInfo {
@@ -59,6 +66,7 @@ export interface TechKeyInfo {
   learningCurve: 'Easy' | 'Medium' | 'Hard';
   scalability: 'Good' | 'High' | 'Very High' | 'Excellent';
   ecosystem: 'Moderate' | 'High' | 'Very High';
+  costProfile?: 'Low / Open-Source' | 'Moderate / Tiered' | 'High / Enterprise';
 }
 
 export interface TechMetrics {
@@ -74,7 +82,7 @@ export interface Technology {
   category: 'Frontend' | 'Backend' | 'Database' | 'Authentication' | 'Payments' | 'Deployment' | 'Mobile' | 'Storage' | 'Monitoring';
   tagline: string;
   description: string;
-  matchScore: number;
+  matchScore: number; // StackMatch Suitability Assessment
   isRecommended?: boolean;
   keyInfo: TechKeyInfo;
   metrics: TechMetrics;
@@ -83,6 +91,7 @@ export interface Technology {
   tradeOffs: string[];
   alternatives: string[];
   realWorldUsage: string;
+  officialDocsUrl?: string;
   learningResourcesCount?: number;
 }
 
@@ -119,6 +128,7 @@ export interface ArchitectureNode {
 export interface RoadmapDeliverable {
   title: string;
   completed: boolean;
+  priority?: PriorityLevel;
 }
 
 export interface RoadmapPhase {
@@ -127,6 +137,7 @@ export interface RoadmapPhase {
   duration: string;
   status: 'completed' | 'in-progress' | 'upcoming';
   deliverables: RoadmapDeliverable[];
+  dependencies?: string[];
 }
 
 export type ResourceCategory = 'Official Documentation' | 'YouTube' | 'Tutorials' | 'Examples' | 'Guides';
@@ -139,6 +150,7 @@ export interface ResourceItem {
   technology: string;
   url: string;
   readTimeOrDuration?: string;
+  isVerified?: boolean;
 }
 
 export interface BlueprintSection {
@@ -155,9 +167,30 @@ export interface ProjectBlueprint {
   sections: BlueprintSection[];
 }
 
+export interface FollowUpQuestion {
+  id: string;
+  question: string;
+  context?: string;
+  options: string[];
+}
+
+export interface IdeaAnalysisResult {
+  problemStatement: string;
+  targetUsers: string[];
+  mainGoals: string[];
+  proposedSolution: string;
+  platformRequirements: string[];
+  constraints: string[];
+  assumptions: string[];
+  unresolvedQuestions: string[];
+  followUpQuestions: FollowUpQuestion[];
+}
+
 export interface MessageMetadata {
   suggestedResponses?: string[];
   stage?: ProjectStage;
+  followUpQuestion?: FollowUpQuestion;
+  analysisSummary?: Partial<IdeaAnalysisResult>;
 }
 
 export interface Message {

@@ -251,6 +251,11 @@ class InMemoryStore {
     return this.requirements.get(projectId) || [];
   }
 
+  public async setRequirements(projectId: string, reqs: Requirement[]): Promise<Requirement[]> {
+    this.requirements.set(projectId, reqs);
+    return reqs;
+  }
+
   public async addRequirement(projectId: string, req: Omit<Requirement, 'id' | 'projectId'>): Promise<Requirement> {
     const list = this.requirements.get(projectId) || [];
     const created: Requirement = {
@@ -263,28 +268,76 @@ class InMemoryStore {
     return created;
   }
 
+  public async updateRequirement(projectId: string, reqId: string, updates: Partial<Requirement>): Promise<Requirement | null> {
+    const list = this.requirements.get(projectId) || [];
+    const idx = list.findIndex((r) => r.id === reqId);
+    if (idx === -1) return null;
+    const updated = { ...list[idx], ...updates };
+    list[idx] = updated;
+    this.requirements.set(projectId, list);
+    return updated;
+  }
+
+  public async deleteRequirement(projectId: string, reqId: string): Promise<boolean> {
+    const list = this.requirements.get(projectId) || [];
+    const filtered = list.filter((r) => r.id !== reqId);
+    if (filtered.length === list.length) return false;
+    this.requirements.set(projectId, filtered);
+    return true;
+  }
+
   public async getTechnologies(projectId: string): Promise<Technology[]> {
     return this.technologies.get(projectId) || sampleTechnologies;
+  }
+
+  public async setTechnologies(projectId: string, techs: Technology[]): Promise<Technology[]> {
+    this.technologies.set(projectId, techs);
+    return techs;
   }
 
   public async getComparisons(projectId: string): Promise<TechComparisonGroup> {
     return this.comparisons.get(projectId) || sampleComparisons;
   }
 
+  public async setComparisons(projectId: string, comp: TechComparisonGroup): Promise<TechComparisonGroup> {
+    this.comparisons.set(projectId, comp);
+    return comp;
+  }
+
   public async getArchitecture(projectId: string): Promise<ArchitectureNode[]> {
     return this.architectures.get(projectId) || sampleArchitecture;
+  }
+
+  public async setArchitecture(projectId: string, nodes: ArchitectureNode[]): Promise<ArchitectureNode[]> {
+    this.architectures.set(projectId, nodes);
+    return nodes;
   }
 
   public async getRoadmap(projectId: string): Promise<RoadmapPhase[]> {
     return this.roadmaps.get(projectId) || sampleRoadmap;
   }
 
+  public async setRoadmap(projectId: string, phases: RoadmapPhase[]): Promise<RoadmapPhase[]> {
+    this.roadmaps.set(projectId, phases);
+    return phases;
+  }
+
   public async getResources(projectId: string): Promise<ResourceItem[]> {
     return this.resources.get(projectId) || sampleResources;
   }
 
+  public async setResources(projectId: string, res: ResourceItem[]): Promise<ResourceItem[]> {
+    this.resources.set(projectId, res);
+    return res;
+  }
+
   public async getBlueprint(projectId: string): Promise<ProjectBlueprint | null> {
     return this.blueprints.get(projectId) || null;
+  }
+
+  public async setBlueprint(projectId: string, bp: ProjectBlueprint): Promise<ProjectBlueprint> {
+    this.blueprints.set(projectId, bp);
+    return bp;
   }
 }
 

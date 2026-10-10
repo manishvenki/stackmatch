@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { store } from '../services/store';
+import { aiPlanningService } from '../services/aiPlanningService';
 
 export const getMessages = async (req: Request, res: Response) => {
   try {
@@ -32,9 +33,16 @@ export const postMessage = async (req: Request, res: Response) => {
     // Record user message
     const userMsg = await store.addMessage(id, 'user', content.trim());
 
-    // Generate intelligent contextual response (Architecture prepared for Master Prompt 02 AI LLM integration)
+    // Retrieve project and conversation history
+    const project = await store.getProjectById(id);
     const existingMessages = await store.getMessages(id);
-    const msgCount = existingMessages.length;
+    const projectName = project ? project.name : 'Project';
+
+    // Compile cumulative context
+    const fullPromptContext = existingMessages.map(m => m.content).join(' ');
+
+    // Invoke AI Planning Service
+    const analysis = await aiPlanningService.analyzeIdea(fullPromptContext, projectName);
 
     let assistantResponseContent = '';
     let stage: 'idea' | 'requirements' | 'planning' | 'finalize' = 'requirements';
@@ -42,53 +50,91 @@ export const postMessage = async (req: Request, res: Response) => {
 
     const lower = content.toLowerCase();
 
-    if (lower.includes('student') || lower.includes('restaurant') || lower.includes('admin') || lower.includes('user')) {
+    // Contextual intelligent conversational branching
+    if (lower.includes('student') || lower.includes('restaurant') || lower.includes('admin') || lower.includes('user') || lower.includes('role')) {
       stage = 'requirements';
-      assistantResponseContent = `Got it. Catering to students, restaurant vendors, and campus admins requires a clear multi-role architecture.
+      assistantResponseContent = `Got it. Supporting ${analysis.targetUsers.join(', ')} requires clear role-based access control (RBAC) and dedicated portal views.
 
-For the platform access:
-1. Would you like a responsive web application, mobile apps (iOS & Android), or both?
-2. Do you require online payment collection (UPI, cards), or will students pay at pickup counters?`;
-      suggestedResponses = ['Both web and mobile', 'Web only for MVP', 'Online payments (UPI/Card)'];
+For primary product delivery:
+1. Will your users access this via a web portal, native mobile app, or both?
+2. Do you require online payment collection (UPI, Cards), or will transactions be settled externally?`;
+      suggestedResponses = ['Both web and mobile', 'Online payments (UPI/Card)', 'Web only for MVP'];
     } else if (lower.includes('mobile') || lower.includes('web') || lower.includes('payment') || lower.includes('online')) {
       stage = 'planning';
-      assistantResponseContent = `Understood! Having both web and mobile access with instant payment processing gives students maximum convenience during lunch rushes.
+      assistantResponseContent = `Understood! Having ${analysis.platformRequirements.join(' and ')} with instant payment processing gives users maximum convenience.
 
 Based on this scope, I've outlined:
-- Functional Requirements (User accounts, Menu browsing, Live orders, Payments)
-- Non-Functional Requirements (High concurrency lunch spikes, Tokenized security)
-- Recommended Tech Stack: React + React Native, Node.js API, and PostgreSQL for transactional integrity.
+• Functional Requirements (${analysis.targetUsers[0]} flows, Catalog, Checkout, and Operations)
+• Non-Functional Requirements (High concurrency spikes, Sub-500ms latency, Tokenized security)
+• Recommended Stack: React + React Native, Node.js API Gateway, and PostgreSQL for ACID transactional integrity.
 
-Would you like to review the generated project requirements and architecture now?`;
-      suggestedResponses = ['View Project Overview', 'Explore Tech Stack', 'Review Architecture'];
+Would you like to generate the complete technical plan and review the architecture?`;
+      suggestedResponses = ['Generate Complete Plan', 'Explore Tech Stack', 'Review Architecture'];
+    } else if (lower.includes('generate') || lower.includes('complete plan') || lower.includes('architecture') || lower.includes('tech stack')) {
+      stage = 'finalize';
+      assistantResponseContent = `I have compiled your complete build-ready blueprint for "${projectName}":
+✓ Requirements & User Stories synthesized
+✓ Recommended Tech Stack with suitability scoring
+✓ 3-Tier System Architecture Diagram generated
+✓ 4-Phase Delivery Roadmap structured
+
+You can click "View Project Plan" above or the buttons below to explore the specifications.`;
+      suggestedResponses = ['View Project Plan', 'Inspect Requirements', 'Explore Tech Stack'];
     } else {
       stage = 'idea';
-      assistantResponseContent = `That's a great project direction. To help structure the best technology recommendations and timeline:
+      assistantResponseContent = `That's a great project direction. I've extracted the initial concept:
+• Problem: ${analysis.problemStatement}
+• Target Users: ${analysis.targetUsers.join(', ')}
 
-1. Who are the primary target users for this product?
-2. What are the key features needed for your minimum viable version (MVP)?
-3. What platforms should we target first (Web, Mobile, or Both)?`;
+To refine the technology selection and architecture:
+1. What is the most critical core feature needed on day one?
+2. Which platform do you want to prioritize first (Web or Mobile)?`;
       suggestedResponses = [
-        'Students and campus merchants',
         'Both web and mobile',
-        'Simple web MVP first'
+        'Simple web MVP first',
+        'Mobile app first'
       ];
     }
 
-    // Save assistant message
+    // Save assistant message with metadata
     const assistantMsg = await store.addMessage(id, 'assistant', assistantResponseContent, {
       stage,
-      suggestedResponses
+      suggestedResponses,
+      followUpQuestion: analysis.followUpQuestions[0],
+      analysisSummary: {
+        problemStatement: analysis.problemStatement,
+        targetUsers: analysis.targetUsers,
+        mainGoals: analysis.mainGoals,
+        platformRequirements: analysis.platformRequirements
+      }
     });
 
-    // Update project stage
-    await store.updateProject(id, { currentStage: stage });
+    // Automatically update project stage and summary in store
+    if (project) {
+      await store.updateProject(id, {
+        currentStage: stage,
+        summary: {
+          projectType: analysis.platformRequirements.join(' + ') || 'Web + Mobile Application',
+          primaryUsers: analysis.targetUsers,
+          industry: 'Software & Technology',
+          keyFeatures: ['User Onboarding', 'Core Workflows', 'Role-Based Dashboard'],
+          estimatedComplexity: 'Medium',
+          estimatedTimeline: '2–4 months',
+          goals: analysis.mainGoals,
+          targetAudience: analysis.targetUsers,
+          constraints: analysis.constraints,
+          assumptions: analysis.assumptions,
+          userRoles: analysis.targetUsers
+        }
+      });
+    }
 
     return res.status(201).json({
       success: true,
       data: {
         userMessage: userMsg,
-        assistantMessage: assistantMsg
+        assistantMessage: assistantMsg,
+        analysis
       }
     });
   } catch (err: any) {

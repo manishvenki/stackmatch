@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Layers, Menu, X, ArrowRight, User as UserIcon } from 'lucide-react';
+import { Menu, X, ArrowRight, User as UserIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { User } from '../../types';
+import { StackMatchLogo } from '../brand/StackMatchLogo';
 
 export interface NavbarProps {
   currentUser?: User | null;
@@ -24,14 +25,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand */}
         <button
           onClick={() => onNavigate('landing')}
-          className="flex items-center gap-2.5 group cursor-pointer focus:outline-none"
+          className="flex items-center group cursor-pointer focus:outline-none"
+          aria-label="StackMatch Home"
         >
-          <div className="w-8 h-8 rounded-lg bg-[#111827] text-white flex items-center justify-center font-bold shadow-xs transition-subtle group-hover:scale-105">
-            <Layers className="w-4 h-4 stroke-[2.2]" />
-          </div>
-          <div className="text-left">
-            <span className="text-base font-bold text-[#111827] tracking-tight">StackMatch</span>
-          </div>
+          <StackMatchLogo variant="full" size="md" />
         </button>
 
         {/* Center Navigation */}

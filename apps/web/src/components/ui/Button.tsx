@@ -2,7 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -20,7 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-subtle select-none focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-subtle select-none focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none cursor-pointer active:scale-[0.98]';
 
   const sizeStyles = {
     sm: 'text-xs px-3 py-1.5 gap-1.5',
@@ -30,6 +30,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary: 'bg-[#111827] text-white hover:bg-[#1f2937] focus:ring-[#111827] active:bg-[#030712] shadow-sm',
+    accent: 'bg-[#2563EB] text-white hover:bg-[#1D4ED8] focus:ring-[#2563EB] active:bg-[#1E40AF] shadow-sm',
     secondary: 'bg-white text-[#374151] border border-[#D1D5DB] hover:bg-[#F9FAFB] hover:border-[#9CA3AF] focus:ring-[#9CA3AF] shadow-xs',
     outline: 'bg-transparent text-[#111827] border border-[#D1D5DB] hover:bg-[#F3F4F6] focus:ring-[#111827]',
     ghost: 'bg-transparent text-[#374151] hover:bg-[#F3F4F6] hover:text-[#111827] focus:ring-[#9CA3AF]',

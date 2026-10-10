@@ -128,6 +128,20 @@ class ApiClient {
     });
   }
 
+  // Phase 2 AI Planning Intelligence
+  public async analyzeIdea(projectId: string, prompt: string): Promise<any> {
+    return this.request(`/projects/${projectId}/analyze-idea`, {
+      method: 'POST',
+      body: JSON.stringify({ prompt })
+    });
+  }
+
+  public async generatePlan(projectId: string): Promise<any> {
+    return this.request(`/projects/${projectId}/generate-plan`, {
+      method: 'POST'
+    });
+  }
+
   // Domain queries
   public async getRequirements(projectId: string): Promise<Requirement[]> {
     return this.request<Requirement[]>(`/projects/${projectId}/requirements`);
@@ -137,6 +151,19 @@ class ApiClient {
     return this.request<Requirement>(`/projects/${projectId}/requirements`, {
       method: 'POST',
       body: JSON.stringify(req)
+    });
+  }
+
+  public async updateRequirement(projectId: string, reqId: string, updates: Partial<Requirement>): Promise<Requirement> {
+    return this.request<Requirement>(`/projects/${projectId}/requirements/${reqId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
+  public async deleteRequirement(projectId: string, reqId: string): Promise<void> {
+    await this.request(`/projects/${projectId}/requirements/${reqId}`, {
+      method: 'DELETE'
     });
   }
 
@@ -162,6 +189,27 @@ class ApiClient {
 
   public async getBlueprint(projectId: string): Promise<ProjectBlueprint> {
     return this.request<ProjectBlueprint>(`/projects/${projectId}/blueprint`);
+  }
+
+  public async getProjectPlan(projectId: string) {
+    const [requirements, technologies, comparisons, architecture, roadmap, resources, blueprint] = await Promise.allSettled([
+      this.getRequirements(projectId),
+      this.getTechStack(projectId),
+      this.getComparisons(projectId),
+      this.getArchitecture(projectId),
+      this.getRoadmap(projectId),
+      this.getResources(projectId),
+      this.getBlueprint(projectId),
+    ]);
+    return {
+      requirements: requirements.status === 'fulfilled' ? requirements.value : [],
+      technologies: technologies.status === 'fulfilled' ? technologies.value : [],
+      comparisons: comparisons.status === 'fulfilled' ? comparisons.value : null,
+      architecture: architecture.status === 'fulfilled' ? architecture.value : [],
+      roadmap: roadmap.status === 'fulfilled' ? roadmap.value : [],
+      resources: resources.status === 'fulfilled' ? resources.value : [],
+      blueprint: blueprint.status === 'fulfilled' ? blueprint.value : null,
+    };
   }
 }
 

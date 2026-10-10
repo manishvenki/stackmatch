@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   MessageSquare,
   Edit3,
-  MoreVertical,
   CheckCircle2,
   Clock,
   Layers,
@@ -12,6 +11,9 @@ import {
   Target,
   FileCheck,
   Zap,
+  Plus,
+  Shield,
+  HelpCircle,
 } from 'lucide-react';
 import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
@@ -23,6 +25,7 @@ import { ComparisonTable } from '../components/domain/ComparisonTable';
 import { ArchitectureDiagram } from '../components/domain/ArchitectureDiagram';
 import { RoadmapTimeline } from '../components/domain/RoadmapTimeline';
 import { ResourceCard } from '../components/domain/ResourceCard';
+import { EditRequirementModal } from '../components/domain/EditRequirementModal';
 import {
   Project,
   Requirement,
@@ -43,8 +46,12 @@ export interface ProjectOverviewPageProps {
   roadmapPhases: RoadmapPhase[];
   resources: ResourceItem[];
   blueprint: ProjectBlueprint;
+  initialTab?: string;
   onOpenChat: () => void;
   onOpenMobileSidebar?: () => void;
+  onUpdateRequirement?: (updatedReq: Partial<Requirement> & { id: string }) => Promise<void>;
+  onDeleteRequirement?: (requirementId: string) => Promise<void>;
+  onAddRequirement?: (newReq: Omit<Requirement, 'id' | 'projectId'>) => Promise<void>;
 }
 
 export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
@@ -56,14 +63,22 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   roadmapPhases,
   resources,
   blueprint,
+  initialTab = 'overview',
   onOpenChat,
+  onUpdateRequirement,
+  onDeleteRequirement,
+  onAddRequirement,
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedTech, setSelectedTech] = useState<Technology>(
-    technologies.find((t) => t.name === 'PostgreSQL') || technologies[0]
+    technologies.find((t) => t.name === 'PostgreSQL') || technologies[0] || ({} as Technology)
   );
   const [techDetailTab, setTechDetailTab] = useState<'overview' | 'why' | 'benefits' | 'tradeoffs' | 'alternatives' | 'realworld' | 'learn'>('overview');
-  const [requirementFilter, setRequirementFilter] = useState<'all' | 'functional' | 'non-functional'>('all');
+  const [requirementFilter, setRequirementFilter] = useState<'all' | 'functional' | 'non-functional' | 'mvp'>('all');
+
+  // Requirement Modal State
+  const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -79,8 +94,29 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
 
   const filteredRequirements = requirements.filter((r) => {
     if (requirementFilter === 'all') return true;
+    if (requirementFilter === 'mvp') return !!r.isMvpScope;
     return r.type === requirementFilter;
   });
+
+  const handleEditReq = (req: Requirement) => {
+    setEditingRequirement(req);
+    setIsEditModalOpen(true);
+  };
+
+  const handleNewReq = () => {
+    const dummyReq: Requirement = {
+      id: `req_${Date.now()}`,
+      projectId: project.id,
+      title: '',
+      description: '',
+      type: 'functional',
+      priority: 'medium',
+      isMvpScope: true,
+      category: 'Core Features',
+    };
+    setEditingRequirement(dummyReq);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F9FAFB] overflow-y-auto">
@@ -116,12 +152,12 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 AI Scoping Chat
               </Button>
               <Button
-                variant="outline"
+                variant="primary"
                 size="sm"
-                leftIcon={<Edit3 className="w-3.5 h-3.5" />}
-                onClick={() => alert('Project settings editing modal (Foundational Interface)')}
+                leftIcon={<FileCheck className="w-3.5 h-3.5" />}
+                onClick={() => setActiveTab('blueprint')}
               >
-                Edit Project
+                Project Blueprint
               </Button>
             </div>
           </div>
@@ -150,7 +186,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                       Project Type
                     </span>
                     <span className="font-bold text-[#111827] text-sm">
-                      {project.summary?.projectType || 'Web + Mobile Application'}
+                      {project.summary?.projectType || 'Web & Mobile Application'}
                     </span>
                   </div>
 
@@ -159,7 +195,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                       Primary Users
                     </span>
                     <span className="font-bold text-[#111827] text-sm">
-                      {project.summary?.primaryUsers.join(', ') || 'Students, Restaurants, Admin'}
+                      {project.summary?.primaryUsers?.join(', ') || 'End Users, Administrators'}
                     </span>
                   </div>
 
@@ -168,7 +204,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                       Industry
                     </span>
                     <span className="font-bold text-[#111827] text-sm">
-                      {project.summary?.industry || 'Food & Beverage / Education'}
+                      {project.summary?.industry || 'Software & Technology'}
                     </span>
                   </div>
 
@@ -187,7 +223,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                     Key Features
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {project.summary?.keyFeatures.map((feat, idx) => (
+                    {project.summary?.keyFeatures?.map((feat, idx) => (
                       <span
                         key={idx}
                         className="text-xs font-medium px-3 py-1 bg-[#F3F4F6] text-[#374151] rounded-md border border-[#E5E7EB]"
@@ -214,7 +250,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                     <span>Target Audience</span>
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {project.summary?.targetAudience.map((audience, idx) => (
+                    {project.summary?.targetAudience?.map((audience, idx) => (
                       <Badge key={idx} variant="highlight" size="md">
                         {audience}
                       </Badge>
@@ -250,7 +286,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 <span>Project Goals</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                {project.summary?.goals.map((goal, idx) => (
+                {project.summary?.goals?.map((goal, idx) => (
                   <div
                     key={idx}
                     className="flex items-start gap-2.5 p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] text-xs text-[#374151]"
@@ -271,49 +307,74 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-[#111827]">Project Requirements</h2>
                 <p className="text-xs text-[#687280]">
-                  Everything your product needs to accomplish.
+                  Verified functional and non-functional specifications. Click any card to edit details or toggle MVP scope.
                 </p>
               </div>
 
-              {/* Requirement Filters */}
-              <div className="inline-flex rounded-lg border border-[#D1D5DB] bg-white p-1 text-xs">
-                <button
-                  onClick={() => setRequirementFilter('all')}
-                  className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
-                    requirementFilter === 'all'
-                      ? 'bg-[#111827] text-white'
-                      : 'text-[#687280] hover:text-[#111827]'
-                  }`}
+              <div className="flex items-center gap-2.5">
+                {/* Requirement Filters */}
+                <div className="inline-flex rounded-lg border border-[#D1D5DB] bg-white p-1 text-xs">
+                  <button
+                    onClick={() => setRequirementFilter('all')}
+                    className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
+                      requirementFilter === 'all'
+                        ? 'bg-[#111827] text-white'
+                        : 'text-[#687280] hover:text-[#111827]'
+                    }`}
+                  >
+                    All ({requirements.length})
+                  </button>
+                  <button
+                    onClick={() => setRequirementFilter('mvp')}
+                    className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
+                      requirementFilter === 'mvp'
+                        ? 'bg-[#111827] text-white'
+                        : 'text-[#687280] hover:text-[#111827]'
+                    }`}
+                  >
+                    MVP Scope
+                  </button>
+                  <button
+                    onClick={() => setRequirementFilter('functional')}
+                    className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
+                      requirementFilter === 'functional'
+                        ? 'bg-[#111827] text-white'
+                        : 'text-[#687280] hover:text-[#111827]'
+                    }`}
+                  >
+                    Functional
+                  </button>
+                  <button
+                    onClick={() => setRequirementFilter('non-functional')}
+                    className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
+                      requirementFilter === 'non-functional'
+                        ? 'bg-[#111827] text-white'
+                        : 'text-[#687280] hover:text-[#111827]'
+                    }`}
+                  >
+                    Non-Functional
+                  </button>
+                </div>
+
+                <Button
+                  variant="accent"
+                  size="sm"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  onClick={handleNewReq}
                 >
-                  All ({requirements.length})
-                </button>
-                <button
-                  onClick={() => setRequirementFilter('functional')}
-                  className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
-                    requirementFilter === 'functional'
-                      ? 'bg-[#111827] text-white'
-                      : 'text-[#687280] hover:text-[#111827]'
-                  }`}
-                >
-                  Functional
-                </button>
-                <button
-                  onClick={() => setRequirementFilter('non-functional')}
-                  className={`px-3 py-1 rounded-md font-medium transition-subtle cursor-pointer ${
-                    requirementFilter === 'non-functional'
-                      ? 'bg-[#111827] text-white'
-                      : 'text-[#687280] hover:text-[#111827]'
-                  }`}
-                >
-                  Non-Functional
-                </button>
+                  Add Requirement
+                </Button>
               </div>
             </div>
 
             {/* Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredRequirements.map((req) => (
-                <RequirementCard key={req.id} requirement={req} />
+                <RequirementCard
+                  key={req.id}
+                  requirement={req}
+                  onEdit={handleEditReq}
+                />
               ))}
             </div>
           </div>
@@ -326,7 +387,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-[#111827]">Recommended Tech Stack</h2>
                 <p className="text-xs text-[#687280]">
-                  Based on your project requirements, here's the recommended technology stack.
+                  StackMatch Suitability Assessments calculated specifically for {project.name}.
                 </p>
               </div>
               <Button
@@ -334,7 +395,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 size="sm"
                 onClick={() => setActiveTab('comparison')}
               >
-                Open Side-by-Side Comparison
+                Side-by-Side Comparison
               </Button>
             </div>
 
@@ -367,7 +428,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                   key={t.id}
                   onClick={() => setSelectedTech(t)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-subtle shrink-0 cursor-pointer ${
-                    selectedTech.id === t.id
+                    selectedTech?.id === t.id
                       ? 'bg-[#111827] text-white shadow-xs'
                       : 'bg-white border border-[#D1D5DB] text-[#374151] hover:bg-[#F9FAFB]'
                   }`}
@@ -378,213 +439,225 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
             </div>
 
             {/* Header of Selected Tech */}
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="neutral">{selectedTech.category}</Badge>
-                  <span className="text-xs text-[#687280] font-medium">{selectedTech.keyInfo.type}</span>
+            {selectedTech?.id && (
+              <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="neutral">{selectedTech.category}</Badge>
+                    <span className="text-xs text-[#687280] font-medium">{selectedTech.keyInfo?.type}</span>
+                    {selectedTech.keyInfo?.costProfile && (
+                      <span className="text-xs text-[#16A34A] font-semibold bg-[#DCFCE7] px-2 py-0.5 rounded">
+                        {selectedTech.keyInfo.costProfile}
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-[#111827]">
+                    {selectedTech.name}
+                  </h2>
+                  <p className="text-xs text-[#687280] mt-0.5">
+                    {selectedTech.tagline}
+                  </p>
                 </div>
-                <h2 className="text-2xl font-extrabold text-[#111827]">
-                  {selectedTech.name}
-                </h2>
-                <p className="text-xs text-[#687280] mt-0.5">
-                  {selectedTech.tagline}
-                </p>
+                <div className="text-right">
+                  <Badge variant="highlight" size="md" icon={<Sparkles className="w-3.5 h-3.5 text-white" />}>
+                    {selectedTech.matchScore}% Suitability Match
+                  </Badge>
+                  <p className="text-[10px] text-[#9CA3AF] mt-1">StackMatch Suitability Assessment</p>
+                </div>
               </div>
-              <Badge variant="highlight" size="md" icon={<Sparkles className="w-3.5 h-3.5 text-white" />}>
-                {selectedTech.matchScore}% Match
-              </Badge>
-            </div>
+            )}
 
             {/* Deep Tabs */}
-            <div className="border-b border-[#E5E7EB] flex gap-2 overflow-x-auto">
-              {[
-                { id: 'overview', label: 'Overview' },
-                { id: 'why', label: 'Why Recommended' },
-                { id: 'benefits', label: 'Benefits' },
-                { id: 'tradeoffs', label: 'Trade-offs' },
-                { id: 'alternatives', label: 'Alternatives' },
-                { id: 'realworld', label: 'Real-world Usage' },
-              ].map((subTab) => (
-                <button
-                  key={subTab.id}
-                  onClick={() => setTechDetailTab(subTab.id as any)}
-                  className={`px-3 py-2 text-xs font-semibold border-b-2 transition-subtle cursor-pointer ${
-                    techDetailTab === subTab.id
-                      ? 'border-[#111827] text-[#111827]'
-                      : 'border-transparent text-[#687280] hover:text-[#111827]'
-                  }`}
-                >
-                  {subTab.label}
-                </button>
-              ))}
-            </div>
+            {selectedTech?.id && (
+              <>
+                <div className="border-b border-[#E5E7EB] flex gap-2 overflow-x-auto">
+                  {[
+                    { id: 'overview', label: 'Overview' },
+                    { id: 'why', label: 'Why Recommended' },
+                    { id: 'benefits', label: 'Benefits' },
+                    { id: 'tradeoffs', label: 'Trade-offs' },
+                    { id: 'alternatives', label: 'Alternatives' },
+                    { id: 'realworld', label: 'Real-world Usage' },
+                  ].map((subTab) => (
+                    <button
+                      key={subTab.id}
+                      onClick={() => setTechDetailTab(subTab.id as any)}
+                      className={`px-3 py-2 text-xs font-semibold border-b-2 transition-subtle cursor-pointer ${
+                        techDetailTab === subTab.id
+                          ? 'border-[#111827] text-[#111827]'
+                          : 'border-transparent text-[#687280] hover:text-[#111827]'
+                      }`}
+                    >
+                      {subTab.label}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Content for selected deep tab */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
-                {techDetailTab === 'overview' && (
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-[#111827]">About {selectedTech.name}</h4>
-                    <p className="text-xs sm:text-sm text-[#374151] leading-relaxed">
-                      {selectedTech.description}
-                    </p>
-                    <div className="pt-3 border-t border-[#F3F4F6]">
-                      <h5 className="text-xs font-semibold text-[#687280] uppercase tracking-wider mb-2">
-                        Real-world adoption
-                      </h5>
-                      <p className="text-xs text-[#374151] bg-[#F9FAFB] p-3 rounded-lg border border-[#E5E7EB]">
-                        {selectedTech.realWorldUsage}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card className="lg:col-span-2">
+                    {techDetailTab === 'overview' && (
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold text-[#111827]">About {selectedTech.name}</h4>
+                        <p className="text-xs sm:text-sm text-[#374151] leading-relaxed">
+                          {selectedTech.description}
+                        </p>
+                        <div className="pt-3 border-t border-[#F3F4F6]">
+                          <h5 className="text-xs font-semibold text-[#687280] uppercase tracking-wider mb-2">
+                            Real-world adoption
+                          </h5>
+                          <p className="text-xs text-[#374151] bg-[#F9FAFB] p-3 rounded-lg border border-[#E5E7EB]">
+                            {selectedTech.realWorldUsage}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-                {techDetailTab === 'why' && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-bold text-[#111827]">Why Recommended for {project.name}</h4>
-                    <ul className="space-y-2">
-                      {selectedTech.whyRecommended.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-[#374151]">
-                          <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                    {techDetailTab === 'why' && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-[#111827]">Why Recommended for {project.name}</h4>
+                        <ul className="space-y-2">
+                          {selectedTech.whyRecommended?.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-xs text-[#374151]">
+                              <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                {techDetailTab === 'benefits' && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-bold text-[#111827]">Key Engineering Benefits</h4>
-                    <ul className="space-y-2">
-                      {selectedTech.benefits.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-[#374151]">
-                          <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                    {techDetailTab === 'benefits' && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-[#111827]">Key Engineering Benefits</h4>
+                        <ul className="space-y-2">
+                          {selectedTech.benefits?.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-xs text-[#374151]">
+                              <CheckCircle2 className="w-4 h-4 text-[#16A34A] shrink-0 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                {techDetailTab === 'tradeoffs' && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-bold text-[#111827]">Considered Trade-offs</h4>
-                    <ul className="space-y-2">
-                      {selectedTech.tradeOffs.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-[#B91C1C] bg-[#FEF2F2] p-2.5 rounded-lg border border-[#FEE2E2]">
-                          <span>•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                    {techDetailTab === 'tradeoffs' && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-[#111827]">Considered Trade-offs</h4>
+                        <ul className="space-y-2">
+                          {selectedTech.tradeOffs?.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2.5 text-xs text-[#B91C1C] bg-[#FEF2F2] p-2.5 rounded-lg border border-[#FEE2E2]">
+                              <span>•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                {techDetailTab === 'alternatives' && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-bold text-[#111827]">Evaluated Alternatives</h4>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {selectedTech.alternatives.map((alt, idx) => (
-                        <span key={idx} className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] bg-[#F9FAFB] text-xs font-semibold text-[#374151]">
-                          {alt}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                    {techDetailTab === 'alternatives' && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-[#111827]">Evaluated Alternatives</h4>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {selectedTech.alternatives?.map((alt, idx) => (
+                            <span key={idx} className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] bg-[#F9FAFB] text-xs font-semibold text-[#374151]">
+                              {alt}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                {techDetailTab === 'realworld' && (
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-bold text-[#111827]">Production Case Studies</h4>
-                    <p className="text-xs text-[#374151] leading-relaxed">
-                      {selectedTech.realWorldUsage}
-                    </p>
-                  </div>
-                )}
-              </Card>
+                    {techDetailTab === 'realworld' && (
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold text-[#111827]">Production Case Studies</h4>
+                        <p className="text-xs text-[#374151] leading-relaxed">
+                          {selectedTech.realWorldUsage}
+                        </p>
+                      </div>
+                    )}
+                  </Card>
 
-              {/* Key Information & Clean Horizontal Metrics */}
-              <div className="space-y-6">
-                <Card>
-                  <h4 className="text-xs font-bold text-[#687280] uppercase tracking-wider mb-3">
-                    Key Information
-                  </h4>
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
-                      <span className="text-[#687280]">Category</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.category}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
-                      <span className="text-[#687280]">Type</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.type}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
-                      <span className="text-[#687280]">License</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.license}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
-                      <span className="text-[#687280]">Learning Curve</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.learningCurve}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
-                      <span className="text-[#687280]">Scalability</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.scalability}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#687280]">Ecosystem</span>
-                      <span className="font-semibold text-[#111827]">{selectedTech.keyInfo.ecosystem}</span>
-                    </div>
-                  </div>
-                </Card>
+                  {/* Key Information & Metrics */}
+                  <div className="space-y-6">
+                    <Card>
+                      <h4 className="text-xs font-bold text-[#687280] uppercase tracking-wider mb-3">
+                        Key Information
+                      </h4>
+                      <div className="space-y-2.5 text-xs">
+                        <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
+                          <span className="text-[#687280]">Category</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.category}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
+                          <span className="text-[#687280]">Type</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.type}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
+                          <span className="text-[#687280]">License</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.license}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
+                          <span className="text-[#687280]">Learning Curve</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.learningCurve}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-[#F3F4F6] pb-1.5">
+                          <span className="text-[#687280]">Scalability</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.scalability}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#687280]">Ecosystem</span>
+                          <span className="font-semibold text-[#111827]">{selectedTech.keyInfo?.ecosystem}</span>
+                        </div>
+                      </div>
+                    </Card>
 
-                {/* Clean Horizontal Metrics Indicators */}
-                <Card>
-                  <h4 className="text-xs font-bold text-[#687280] uppercase tracking-wider mb-3">
-                    Technology Metrics
-                  </h4>
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <div className="flex justify-between text-[#374151] mb-1 font-medium">
-                        <span>Popularity</span>
-                        <span className="font-bold">{selectedTech.metrics.popularity}%</span>
+                    <Card>
+                      <h4 className="text-xs font-bold text-[#687280] uppercase tracking-wider mb-3">
+                        Technology Metrics
+                      </h4>
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <div className="flex justify-between text-[#374151] mb-1 font-medium">
+                            <span>Popularity</span>
+                            <span className="font-bold">{selectedTech.metrics?.popularity}%</span>
+                          </div>
+                          <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics?.popularity}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[#374151] mb-1 font-medium">
+                            <span>Ease of Learning</span>
+                            <span className="font-bold">{selectedTech.metrics?.easeOfLearning}%</span>
+                          </div>
+                          <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics?.easeOfLearning}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[#374151] mb-1 font-medium">
+                            <span>Scalability</span>
+                            <span className="font-bold">{selectedTech.metrics?.scalability}%</span>
+                          </div>
+                          <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics?.scalability}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[#374151] mb-1 font-medium">
+                            <span>Ecosystem</span>
+                            <span className="font-bold">{selectedTech.metrics?.ecosystem}%</span>
+                          </div>
+                          <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics?.ecosystem}%` }} />
+                          </div>
+                        </div>
                       </div>
-                      <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics.popularity}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[#374151] mb-1 font-medium">
-                        <span>Ease of Learning</span>
-                        <span className="font-bold">{selectedTech.metrics.easeOfLearning}%</span>
-                      </div>
-                      <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics.easeOfLearning}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[#374151] mb-1 font-medium">
-                        <span>Scalability</span>
-                        <span className="font-bold">{selectedTech.metrics.scalability}%</span>
-                      </div>
-                      <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics.scalability}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[#374151] mb-1 font-medium">
-                        <span>Ecosystem</span>
-                        <span className="font-bold">{selectedTech.metrics.ecosystem}%</span>
-                      </div>
-                      <div className="w-full bg-[#E5E7EB] rounded-full h-1.5 overflow-hidden">
-                        <div className="bg-[#111827] h-1.5 rounded-full" style={{ width: `${selectedTech.metrics.ecosystem}%` }} />
-                      </div>
-                    </div>
+                    </Card>
                   </div>
-                </Card>
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -607,7 +680,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
             <div>
               <h2 className="text-xl font-bold text-[#111827]">System Architecture</h2>
               <p className="text-xs text-[#687280]">
-                Layered service layout and component communication topography.
+                Tiered service layout and component communication topography.
               </p>
             </div>
             <ArchitectureDiagram nodes={architectureNodes} />
@@ -654,14 +727,17 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                   Complete project requirements, technology recommendations, architecture and development roadmap.
                 </p>
               </div>
-              <Button
-                variant="primary"
-                size="md"
-                leftIcon={<FileCheck className="w-4 h-4" />}
-                onClick={() => alert('PDF Blueprint generation will be fully integrated in Master Prompt 03. Preview is ready!')}
-              >
-                Download PDF
-              </Button>
+              <div className="flex items-center gap-2">
+                <Badge variant="neutral">Phase 2 Preview Ready</Badge>
+                <Button
+                  variant="primary"
+                  size="md"
+                  leftIcon={<FileCheck className="w-4 h-4" />}
+                  onClick={() => alert('PDF Blueprint compilation engine is scheduled for Phase 3. Real-time blueprint preview is live!')}
+                >
+                  Download PDF
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -729,12 +805,12 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                     variant="primary"
                     size="sm"
                     className="w-full text-xs font-semibold"
-                    onClick={() => alert('PDF generation feature will be implemented in Master Prompt 03. All data structures and document layouts are in place.')}
+                    onClick={() => alert('PDF generation is scheduled for Phase 3. Live blueprint data is saved in your project state.')}
                   >
                     Download PDF Blueprint
                   </Button>
                   <p className="text-[10px] text-center text-[#9CA3AF] mt-2">
-                    PDF compilation engine scheduled for Master Prompt 03
+                    PDF compilation engine scheduled for Phase 3
                   </p>
                 </div>
               </Card>
@@ -742,6 +818,28 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit Requirement Modal */}
+      {editingRequirement && (
+        <EditRequirementModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingRequirement(null);
+          }}
+          requirement={editingRequirement}
+          onSave={async (updated) => {
+            if (onUpdateRequirement) {
+              await onUpdateRequirement(updated);
+            }
+          }}
+          onDelete={async (id) => {
+            if (onDeleteRequirement) {
+              await onDeleteRequirement(id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
