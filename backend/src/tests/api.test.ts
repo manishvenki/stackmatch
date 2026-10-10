@@ -140,6 +140,44 @@ const runTests = async () => {
     const blueprintRes = await request('GET', `/api/v1/projects/${newProjectId}/blueprint`);
     assert(blueprintRes.status === 200 && blueprintRes.data?.data?.sections?.length > 0, 'GET /api/v1/projects/:id/blueprint returns blueprint preview data');
 
+    // 14. Phase 5 Project Context Engine test
+    const contextRes = await request('GET', `/api/v1/projects/${newProjectId}/context`);
+    assert(
+      contextRes.status === 200 &&
+      contextRes.data?.data?.problemStatement &&
+      contextRes.data?.data?.complexityFactors?.length > 0 &&
+      Array.isArray(contextRes.data?.data?.selectedTechnologies),
+      'GET /api/v1/projects/:id/context synthesizes structured project context and complexity factors'
+    );
+
+    // 15. Phase 5 Architecture Consistency Validation test
+    const validationRes = await request('GET', `/api/v1/projects/${newProjectId}/architecture/validate`);
+    assert(
+      validationRes.status === 200 &&
+      typeof validationRes.data?.data?.score === 'number' &&
+      Array.isArray(validationRes.data?.data?.findings),
+      'GET /api/v1/projects/:id/architecture/validate returns architecture health score and findings'
+    );
+
+    // 16. Phase 5 Complexity and Technical Risk Insights test
+    const risksRes = await request('GET', `/api/v1/projects/${newProjectId}/insights/risks`);
+    assert(
+      risksRes.status === 200 &&
+      risksRes.data?.data?.overallComplexity &&
+      Array.isArray(risksRes.data?.data?.risks) &&
+      risksRes.data?.data?.risks.length > 0,
+      'GET /api/v1/projects/:id/insights/risks identifies bottlenecks and practical mitigations'
+    );
+
+    // 17. Phase 5 Multi-Category Comparison Filtering test
+    const frontendCompRes = await request('GET', `/api/v1/projects/${newProjectId}/comparisons?category=frontend`);
+    assert(
+      frontendCompRes.status === 200 &&
+      frontendCompRes.data?.data?.category.includes('Frontend') &&
+      frontendCompRes.data?.data?.availableCategories?.length >= 5,
+      'GET /api/v1/projects/:id/comparisons?category=frontend filters matrix by category'
+    );
+
     // 14. Conversation & Message post with AI intelligence
     const msgPostRes = await request('POST', `/api/v1/projects/${newProjectId}/messages`, {
       content: 'We need support for both web and mobile apps with UPI payments.'

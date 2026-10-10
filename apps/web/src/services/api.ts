@@ -5,9 +5,12 @@ import {
   Technology,
   TechComparisonGroup,
   ArchitectureNode,
+  ArchitectureValidationReport,
   RoadmapPhase,
   ResourceItem,
   ProjectBlueprint,
+  ProjectContext,
+  ProjectComplexityInsight,
   Message
 } from '../types';
 
@@ -181,8 +184,21 @@ class ApiClient {
     return this.request<Technology[]>(`/projects/${projectId}/tech-stack`);
   }
 
-  public async getComparisons(projectId: string): Promise<TechComparisonGroup> {
-    return this.request<TechComparisonGroup>(`/projects/${projectId}/comparisons`);
+  public async getComparisons(projectId: string, category?: string): Promise<TechComparisonGroup> {
+    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+    return this.request<TechComparisonGroup>(`/projects/${projectId}/comparisons${query}`);
+  }
+
+  public async getProjectContext(projectId: string): Promise<ProjectContext> {
+    return this.request<ProjectContext>(`/projects/${projectId}/context`);
+  }
+
+  public async validateArchitecture(projectId: string): Promise<ArchitectureValidationReport> {
+    return this.request<ArchitectureValidationReport>(`/projects/${projectId}/architecture/validate`);
+  }
+
+  public async getProjectRisks(projectId: string): Promise<ProjectComplexityInsight> {
+    return this.request<ProjectComplexityInsight>(`/projects/${projectId}/insights/risks`);
   }
 
   public async getArchitecture(projectId: string): Promise<ArchitectureNode[]> {
@@ -202,7 +218,7 @@ class ApiClient {
   }
 
   public async getProjectPlan(projectId: string) {
-    const [requirements, technologies, comparisons, architecture, roadmap, resources, blueprint] = await Promise.allSettled([
+    const [requirements, technologies, comparisons, architecture, roadmap, resources, blueprint, context, validation, risks] = await Promise.allSettled([
       this.getRequirements(projectId),
       this.getTechStack(projectId),
       this.getComparisons(projectId),
@@ -210,6 +226,9 @@ class ApiClient {
       this.getRoadmap(projectId),
       this.getResources(projectId),
       this.getBlueprint(projectId),
+      this.getProjectContext(projectId),
+      this.validateArchitecture(projectId),
+      this.getProjectRisks(projectId)
     ]);
     return {
       requirements: requirements.status === 'fulfilled' ? requirements.value : [],
@@ -219,6 +238,9 @@ class ApiClient {
       roadmap: roadmap.status === 'fulfilled' ? roadmap.value : [],
       resources: resources.status === 'fulfilled' ? resources.value : [],
       blueprint: blueprint.status === 'fulfilled' ? blueprint.value : null,
+      context: context.status === 'fulfilled' ? context.value : null,
+      validation: validation.status === 'fulfilled' ? validation.value : null,
+      risks: risks.status === 'fulfilled' ? risks.value : null,
     };
   }
 }

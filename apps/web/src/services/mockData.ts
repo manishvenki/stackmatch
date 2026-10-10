@@ -7,7 +7,10 @@ import {
   RoadmapPhase,
   ResourceItem,
   ProjectBlueprint,
-  Message
+  Message,
+  ProjectContext,
+  ArchitectureValidationReport,
+  ProjectComplexityInsight
 } from '../types';
 
 export const fallbackProject: Project = {
@@ -641,3 +644,119 @@ To understand the project properly, I'd like to clarify a few things:
     }
   }
 ];
+
+export const fallbackContext: ProjectContext = {
+  projectId: 'proj_college_food_01',
+  projectName: 'College Food Ordering Platform',
+  originalIdea: 'A seamless web and mobile food ordering system connecting college students with campus cafeterias and nearby partnered restaurants.',
+  problemStatement: 'Campus cafeterias face intense lunch-rush bottlenecks and disorganized queueing, leading to missed student meals and operational chaos.',
+  targetUsers: ['College Students', 'Cafeteria & Restaurant Vendors', 'Campus Administrators'],
+  platforms: ['Responsive Web Application', 'React Native Mobile Apps (iOS/Android)'],
+  budgetEstimate: 'Assumed MVP Bootstrap / Lean Tier ($500 - $2,000 infra setup)',
+  timelineEstimate: '3–6 months for production beta rollout',
+  complexityLevel: 'Medium',
+  complexityFactors: [
+    'Real-time state synchronization across restaurant tablet dashboards and student mobile clients',
+    'Financial reconciliation and secure payment webhook processing',
+    'High concurrency spikes during short 20-30 minute class break intervals'
+  ],
+  functionalRequirementsCount: 6,
+  nonFunctionalRequirementsCount: 4,
+  selectedTechnologies: ['React', 'Node.js', 'PostgreSQL', 'JWT Authentication', 'Razorpay', 'Docker'],
+  knownConstraints: [
+    'Limited student budget necessitating lightweight client bundle sizes',
+    'Sub-second payment confirmation required to avoid counter dispute queues'
+  ],
+  unresolvedQuestions: [
+    'Will campus meal card/wallet hardware require dedicated NFC integration?',
+    'Should cafeteria vendors receive a specialized tablet app or responsive web portal?'
+  ],
+  assumptions: [
+    'Initial launch targets single university campus with up to 5,000 concurrent students',
+    'Cafeteria vendors have reliable Wi-Fi connectivity during operating hours'
+  ]
+};
+
+export const fallbackValidationReport: ArchitectureValidationReport = {
+  projectId: 'proj_college_food_01',
+  status: 'consistent',
+  score: 94,
+  summary: 'Architecture demonstrates strong layer separation with reliable ACID transaction guarantees for financial orders.',
+  findings: [
+    {
+      id: 'val_01',
+      severity: 'info',
+      category: 'compatibility',
+      title: 'PostgreSQL ACID Boundaries for Order Fulfillment',
+      description: 'PostgreSQL provides robust transaction isolation levels (Read Committed / Serializable) ideal for preventing double-spend and duplicate order booking.',
+      consequence: 'Zero order integrity drift under peak transaction spikes.',
+      actionableSuggestion: 'Leverage database-level row locking (SELECT FOR UPDATE) on inventory counter tables during checkout.',
+      affectedTechnologies: ['PostgreSQL', 'Node.js']
+    },
+    {
+      id: 'val_02',
+      severity: 'warning',
+      category: 'monitoring',
+      title: 'Observability & APM Layer Recommended for Real-Time Sync',
+      description: 'High concurrency bursts during campus lunch hour can introduce connection pool exhaustion if unmonitored.',
+      consequence: 'Potential 504 gateway timeouts if database connection pool size is misconfigured.',
+      actionableSuggestion: 'Introduce Prometheus metrics and Grafana alerting or Sentry APM tracing for API latency visibility.',
+      affectedTechnologies: ['Node.js', 'Docker']
+    }
+  ],
+  lastValidatedAt: new Date().toISOString()
+};
+
+export const fallbackComplexityInsight: ProjectComplexityInsight = {
+  overallComplexity: 'Medium',
+  score: 58,
+  confidenceLevel: 'High',
+  keyDrivers: [
+    'Synchronous third-party payment gateway callbacks with idempotent retry requirements',
+    'Sudden traffic spikes matching university class bell intervals',
+    'Three distinct authenticated user roles with isolated operational dashboards'
+  ],
+  bottlenecks: [
+    'Database connection pooling under peak lunch rush concurrency',
+    'Webhook delivery latency during third-party banking downtime'
+  ],
+  testingRequirements: [
+    'End-to-end payment gateway sandbox verification with mocked failures',
+    'Simulated load testing at 500 concurrent orders/sec using k6',
+    'Role-based authorization boundary unit tests'
+  ],
+  deploymentConsiderations: [
+    'Managed PostgreSQL with automated daily snapshots and point-in-time recovery',
+    'Containerized backend deployment behind an NGINX reverse proxy with rate limiting'
+  ],
+  risks: [
+    {
+      id: 'rsk_01',
+      category: 'bottleneck',
+      title: 'Campus Rush Hour Concurrency Spikes',
+      severity: 'medium',
+      likelihood: 'high',
+      impact: 'Short 20-minute order bursts may overload unpooled database connections.',
+      practicalMitigation: 'Implement Redis connection caching and pgBouncer connection pooling to cap simultaneous database threads.'
+    },
+    {
+      id: 'rsk_02',
+      category: 'integration',
+      title: 'Payment Gateway Webhook Dropped Packets',
+      severity: 'high',
+      likelihood: 'medium',
+      impact: 'Network drops during student checkout can lead to debited funds without order confirmation.',
+      practicalMitigation: 'Implement an idempotent webhook listener queue with cryptographic signature verification and exponential backoff retry.'
+    },
+    {
+      id: 'rsk_03',
+      category: 'security',
+      title: 'Multi-Tenant Vendor Data Leakage',
+      severity: 'high',
+      likelihood: 'low',
+      impact: 'Flawed query filtering could allow one restaurant to view sales receipts from competing vendors.',
+      practicalMitigation: 'Enforce strict PostgreSQL Row-Level Security (RLS) or mandatory tenant-id filtering in API middleware.'
+    }
+  ]
+};
+

@@ -19,6 +19,9 @@ import {
   fallbackResources,
   fallbackBlueprint,
   fallbackInitialMessages,
+  fallbackContext,
+  fallbackValidationReport,
+  fallbackComplexityInsight,
 } from './services/mockData';
 import {
   User,
@@ -28,9 +31,12 @@ import {
   Technology,
   TechComparisonGroup,
   ArchitectureNode,
+  ArchitectureValidationReport,
   RoadmapPhase,
   ResourceItem,
   ProjectBlueprint,
+  ProjectContext,
+  ProjectComplexityInsight,
 } from './types';
 
 function AppContent() {
@@ -66,10 +72,14 @@ function AppContent() {
   const [requirements, setRequirements] = useState<Requirement[]>(fallbackRequirements);
   const [technologies, setTechnologies] = useState<Technology[]>(fallbackTechnologies);
   const [comparisons, setComparisons] = useState<TechComparisonGroup>(fallbackComparisons);
+  const [activeComparisonCategory, setActiveComparisonCategory] = useState<string>('Databases');
   const [architecture, setArchitecture] = useState<ArchitectureNode[]>(fallbackArchitecture);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>(fallbackRoadmap);
   const [resources, setResources] = useState<ResourceItem[]>(fallbackResources);
   const [blueprint, setBlueprint] = useState<ProjectBlueprint>(fallbackBlueprint);
+  const [projectContext, setProjectContext] = useState<ProjectContext>(fallbackContext);
+  const [validationReport, setValidationReport] = useState<ArchitectureValidationReport>(fallbackValidationReport);
+  const [complexityInsight, setComplexityInsight] = useState<ProjectComplexityInsight>(fallbackComplexityInsight);
 
   // Attempt to load from API backend on mount with workflow continuity
   useEffect(() => {
@@ -108,6 +118,9 @@ function AppContent() {
               if (plan.architecture?.length) setArchitecture(plan.architecture);
               if (plan.roadmap?.length) setRoadmap(plan.roadmap);
               if (plan.blueprint) setBlueprint(plan.blueprint);
+              if (plan.context) setProjectContext(plan.context);
+              if (plan.validation) setValidationReport(plan.validation);
+              if (plan.risks) setComplexityInsight(plan.risks);
             }
             if (msgs && msgs.length > 0) {
               setMessages(msgs);
@@ -140,6 +153,9 @@ function AppContent() {
           if (plan.architecture?.length) setArchitecture(plan.architecture);
           if (plan.roadmap?.length) setRoadmap(plan.roadmap);
           if (plan.blueprint) setBlueprint(plan.blueprint);
+          if (plan.context) setProjectContext(plan.context);
+          if (plan.validation) setValidationReport(plan.validation);
+          if (plan.risks) setComplexityInsight(plan.risks);
         }
         if (msgs && msgs.length > 0) {
           setMessages(msgs);
@@ -301,6 +317,9 @@ function AppContent() {
         if (plan.architecture?.length) setArchitecture(plan.architecture);
         if (plan.roadmap?.length) setRoadmap(plan.roadmap);
         if (plan.blueprint) setBlueprint(plan.blueprint);
+        if (plan.context) setProjectContext(plan.context);
+        if (plan.validation) setValidationReport(plan.validation);
+        if (plan.risks) setComplexityInsight(plan.risks);
       }
 
       // Update active project stage
@@ -317,7 +336,7 @@ function AppContent() {
         id: `msg_${Date.now()}`,
         projectId: activeProject.id,
         role: 'assistant',
-        content: `🎉 Engineering plan successfully synthesized!\n\n• 8 Requirements generated (Functional & Security)\n• Recommended Stack with StackMatch Suitability Assessments\n• Tiered Architecture & 4-Phase Delivery Roadmap.\n\nOpening your Project Overview now...`,
+        content: `🎉 Engineering plan successfully synthesized!\n\n• Project Context Engine initialized with verified problem & audience models\n• Stack recommendations updated with architectural role & integration notes\n• Architecture consistency check: Health Score calculated\n• Technical risk assessment & practical mitigations ready.\n\nOpening your Project Overview now...`,
         timestamp: new Date().toISOString(),
         metadata: {
           stage: 'planning',
@@ -328,7 +347,7 @@ function AppContent() {
       showToast({
         type: 'success',
         title: 'Complete Plan Synthesized',
-        message: 'Requirements, architecture, and technology assessments are ready.',
+        message: 'Context engine, architecture validation, and tech recommendations are ready.',
       });
 
       setTimeout(() => {
@@ -342,6 +361,19 @@ function AppContent() {
       });
     } finally {
       setIsGeneratingPlan(false);
+    }
+  };
+
+  // Handle Multi-Category Comparison Switcher
+  const handleSelectComparisonCategory = async (category: string) => {
+    setActiveComparisonCategory(category);
+    try {
+      const data = await api.getComparisons(activeProject.id, category);
+      if (data && data.technologies?.length) {
+        setComparisons(data);
+      }
+    } catch (_) {
+      // Graceful fallback to existing state
     }
   };
 
@@ -505,10 +537,15 @@ function AppContent() {
           {currentView === 'overview' && (
             <ProjectOverviewPage
               project={activeProject}
+              projectContext={projectContext}
               requirements={requirements}
               technologies={technologies}
               comparisonGroup={comparisons}
+              activeComparisonCategory={activeComparisonCategory}
+              onSelectComparisonCategory={handleSelectComparisonCategory}
               architectureNodes={architecture}
+              validationReport={validationReport}
+              complexityInsight={complexityInsight}
               roadmapPhases={roadmap}
               resources={resources}
               blueprint={blueprint}

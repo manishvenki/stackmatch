@@ -14,6 +14,11 @@ import {
   Plus,
   Shield,
   HelpCircle,
+  AlertTriangle,
+  Activity,
+  AlertCircle,
+  Info,
+  FileText,
 } from 'lucide-react';
 import { Tabs } from '../components/ui/Tabs';
 import { Button } from '../components/ui/Button';
@@ -34,9 +39,12 @@ import {
   Technology,
   TechComparisonGroup,
   ArchitectureNode,
+  ArchitectureValidationReport,
   RoadmapPhase,
   ResourceItem,
   ProjectBlueprint,
+  ProjectContext,
+  ProjectComplexityInsight,
 } from '../types';
 
 export interface ProjectOverviewPageProps {
@@ -48,6 +56,11 @@ export interface ProjectOverviewPageProps {
   roadmapPhases: RoadmapPhase[];
   resources: ResourceItem[];
   blueprint: ProjectBlueprint;
+  projectContext?: ProjectContext | null;
+  validationReport?: ArchitectureValidationReport | null;
+  complexityInsight?: ProjectComplexityInsight | null;
+  activeComparisonCategory?: string;
+  onSelectComparisonCategory?: (category: string) => void;
   initialTab?: string;
   onOpenChat: () => void;
   onOpenMobileSidebar?: () => void;
@@ -66,6 +79,11 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   roadmapPhases,
   resources,
   blueprint,
+  projectContext,
+  validationReport,
+  complexityInsight,
+  activeComparisonCategory = 'Databases',
+  onSelectComparisonCategory,
   initialTab = 'overview',
   onOpenChat,
   onUpdateRequirement,
@@ -301,6 +319,226 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                     <span className="font-medium leading-relaxed">{goal}</span>
                   </div>
                 ))}
+              </div>
+            </Card>
+
+            {/* Consolidated Project Context Engine Card */}
+            <Card className="space-y-4">
+              <div className="flex items-center justify-between border-b border-[#F3F4F6] pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Project Context & Planning Assumptions
+                    </h3>
+                    <p className="text-[11px] text-[#687280]">
+                      Consolidated contextual requirements, platform constraints, and clearly stated boundaries.
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="highlight" size="sm">
+                  Context Synchronized
+                </Badge>
+              </div>
+
+              {/* Problem Statement */}
+              <div className="bg-[#F9FAFB] rounded-xl p-4 border border-[#E5E7EB] text-xs">
+                <span className="text-[11px] font-bold text-[#687280] uppercase tracking-wider block mb-1">
+                  Core Problem Statement
+                </span>
+                <p className="text-sm font-semibold text-[#111827] leading-relaxed">
+                  {projectContext?.problemStatement ||
+                    project.description ||
+                    'Users require an intuitive digital solution facilitating automated workflows, role-based dashboards, and reliable transactional integrity.'}
+                </p>
+              </div>
+
+              {/* Platforms & Assumptions Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="p-3.5 rounded-lg bg-white border border-[#E5E7EB] shadow-2xs">
+                  <span className="text-[11px] font-semibold text-[#687280] block mb-1">
+                    Target Platforms
+                  </span>
+                  <span className="font-bold text-[#111827]">
+                    {projectContext?.platforms?.join(' + ') || project.summary?.projectType || 'Responsive Web & Mobile Apps'}
+                  </span>
+                </div>
+
+                <div className="p-3.5 rounded-lg bg-white border border-[#E5E7EB] shadow-2xs">
+                  <span className="text-[11px] font-semibold text-[#687280] block mb-1">
+                    Budget Planning Profile
+                  </span>
+                  <span className="font-bold text-[#111827]">
+                    {projectContext?.budgetEstimate || 'Bootstrapped / Early Stage ($500–$2,000 tools/cloud)'}
+                  </span>
+                  <span className="text-[10px] text-[#9CA3AF] block mt-0.5">Based on stated architecture</span>
+                </div>
+
+                <div className="p-3.5 rounded-lg bg-white border border-[#E5E7EB] shadow-2xs">
+                  <span className="text-[11px] font-semibold text-[#687280] block mb-1">
+                    Estimated Timeline Window
+                  </span>
+                  <span className="font-bold text-[#111827]">
+                    {projectContext?.timelineEstimate || project.summary?.estimatedTimeline || '3–5 months for full MVP rollout'}
+                  </span>
+                  <span className="text-[10px] text-[#9CA3AF] block mt-0.5">Stated assumption for planning</span>
+                </div>
+              </div>
+
+              {/* Known Constraints & Unresolved Questions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="bg-[#F9FAFB] rounded-lg p-3.5 border border-[#E5E7EB] text-xs">
+                  <span className="text-[11px] font-bold text-[#111827] flex items-center gap-1.5 mb-2">
+                    <Shield className="w-3.5 h-3.5 text-[#2563EB]" />
+                    Known Technical Constraints
+                  </span>
+                  <ul className="space-y-1.5 text-[#4B5563] text-[11px]">
+                    {(projectContext?.knownConstraints || [
+                      'Sub-500ms API response latency under concurrent rush periods',
+                      'Mobile-friendly responsive UI compatible with modern smartphones and tablets',
+                      'Stateless token authorization and credential security standards',
+                    ]).map((c, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-[#2563EB] font-bold">•</span>
+                        <span>{c}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-[#F9FAFB] rounded-lg p-3.5 border border-[#E5E7EB] text-xs">
+                  <span className="text-[11px] font-bold text-[#111827] flex items-center gap-1.5 mb-2">
+                    <HelpCircle className="w-3.5 h-3.5 text-[#D97706]" />
+                    Unresolved Scoping Questions
+                  </span>
+                  <ul className="space-y-1.5 text-[#4B5563] text-[11px]">
+                    {(projectContext?.unresolvedQuestions || [
+                      'Target volume of active concurrent users within the first 6 months',
+                      'Specific regional compliance mandates (GDPR, HIPAA, or local financial data residency)',
+                    ]).map((q, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-[#D97706] font-bold">?</span>
+                        <span>{q}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            {/* Technical Complexity & Risk Insights Panel */}
+            <Card className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F3F4F6] pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] text-[#D97706] flex items-center justify-center">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#111827]">
+                      Project Complexity & Technical Risk Assessment
+                    </h3>
+                    <p className="text-[11px] text-[#687280]">
+                      Transparent evaluation of architectural bottlenecks, testing requirements, and practical mitigations.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={complexityInsight?.overallComplexity === 'High' ? 'danger' : 'warning'} size="md">
+                    {complexityInsight?.score || 65}% Complexity Score ({complexityInsight?.overallComplexity || 'Medium'})
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Complexity Drivers & Bottlenecks */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="bg-white rounded-lg p-3.5 border border-[#E5E7EB]">
+                  <span className="text-[11px] font-bold text-[#687280] uppercase tracking-wider block mb-2">
+                    Key Complexity Drivers
+                  </span>
+                  <ul className="space-y-1.5 text-[#374151]">
+                    {(complexityInsight?.keyDrivers || [
+                      `${requirements.length} categorized functional and non-functional requirements`,
+                      'Role-based permissions separating customer and operator privilege tiers',
+                      'High concurrent traffic periods requiring connection pooling and caching',
+                    ]).map((kd, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A] shrink-0 mt-0.5" />
+                        <span>{kd}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white rounded-lg p-3.5 border border-[#E5E7EB]">
+                  <span className="text-[11px] font-bold text-[#DC2626] uppercase tracking-wider block mb-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Potential Technical Bottlenecks
+                  </span>
+                  <ul className="space-y-1.5 text-[#374151]">
+                    {(complexityInsight?.bottlenecks || [
+                      'Simultaneous rush-hour checkouts causing database connection exhaustion without pooling',
+                      'Third-party payment gateway webhook callback delays or network timeouts',
+                      'Complex role-based permissions logic across multi-persona views',
+                    ]).map((bn, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className="text-[#DC2626] font-bold">•</span>
+                        <span>{bn}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Structured Risk Items with Mitigations */}
+              <div className="space-y-2.5 pt-2">
+                <span className="text-[11px] font-bold text-[#687280] uppercase tracking-wider block">
+                  Identified Technical Risks & Practical Mitigations
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(complexityInsight?.risks || [
+                    {
+                      id: 'risk_concurrency',
+                      title: 'Peak Rush Concurrency Spike Bottleneck',
+                      severity: 'high',
+                      impact: 'High latency or timeout errors during concentrated traffic periods.',
+                      practicalMitigation: 'Implement Redis caching for static catalogs and enable database connection pooling with horizontal container scaling.',
+                    },
+                    {
+                      id: 'risk_webhooks',
+                      title: 'Payment Webhook Delivery Interruption',
+                      severity: 'medium',
+                      impact: 'Customer is charged by bank/UPI, but platform order record remains in "Payment Pending" state.',
+                      practicalMitigation: 'Implement an automated reconciliation cron polling the payment gateway status API for pending transactions every 60 seconds.',
+                    },
+                  ]).map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-[#FAFAFA] rounded-xl p-3.5 border border-[#E5E7EB] space-y-2 text-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-bold text-[#111827]">{r.title}</span>
+                          <Badge
+                            variant={r.severity === 'high' ? 'danger' : 'warning'}
+                            size="sm"
+                          >
+                            {r.severity.toUpperCase()} RISK
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-[#687280]">
+                          <span className="font-semibold text-[#DC2626]">Impact:</span> {r.impact}
+                        </p>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-2.5 border border-[#D1D5DB] text-[11px] text-[#111827]">
+                        <span className="font-semibold text-[#16A34A]">Mitigation:</span>{' '}
+                        {r.practicalMitigation}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </Card>
           </div>
@@ -676,7 +914,11 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
                 Side-by-side trade-off evaluation matrix comparing candidate solutions.
               </p>
             </div>
-            <ComparisonTable comparisonGroup={comparisonGroup} />
+            <ComparisonTable
+              comparisonGroup={comparisonGroup}
+              activeCategory={activeComparisonCategory}
+              onSelectCategory={onSelectComparisonCategory}
+            />
           </div>
         )}
 
@@ -686,10 +928,13 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
             <div>
               <h2 className="text-xl font-bold text-[#111827]">System Architecture</h2>
               <p className="text-xs text-[#687280]">
-                Tiered service layout and component communication topography.
+                Tiered service layout, component communication topography, and automated consistency validation.
               </p>
             </div>
-            <ArchitectureDiagram nodes={architectureNodes} />
+            <ArchitectureDiagram
+              nodes={architectureNodes}
+              validationReport={validationReport}
+            />
           </div>
         )}
 

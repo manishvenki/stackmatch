@@ -14,6 +14,9 @@ import {
   getTechStack,
   getComparisons,
   getArchitecture,
+  validateArchitecture,
+  getProjectContext,
+  getProjectRisks,
   getRoadmap,
   getResources,
   getBlueprint
@@ -50,6 +53,9 @@ router.delete('/:id/requirements/:reqId', deleteRequirement);
 router.get('/:id/tech-stack', getTechStack);
 router.get('/:id/comparisons', getComparisons);
 router.get('/:id/architecture', getArchitecture);
+router.get('/:id/architecture/validate', validateArchitecture);
+router.get('/:id/context', getProjectContext);
+router.get('/:id/insights/risks', getProjectRisks);
 router.get('/:id/roadmap', getRoadmap);
 router.get('/:id/resources', getResources);
 router.get('/:id/blueprint', getBlueprint);

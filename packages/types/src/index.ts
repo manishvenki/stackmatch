@@ -93,6 +93,10 @@ export interface Technology {
   realWorldUsage: string;
   officialDocsUrl?: string;
   learningResourcesCount?: number;
+  roleInArchitecture?: string;
+  integrationConsiderations?: string[];
+  confidenceStatus?: 'Verified Match' | 'Recommended Estimate' | 'Alternative Option';
+  scoringCriteriaExplanation?: string;
 }
 
 export interface ComparisonItem {
@@ -106,12 +110,14 @@ export interface ComparisonItem {
   realWorldUsage: string;
   community: string;
   isRecommended?: boolean;
+  tradeOffs?: string;
 }
 
 export interface TechComparisonGroup {
   category: string;
   title: string;
   technologies: ComparisonItem[];
+  availableCategories?: string[];
 }
 
 export interface ArchitectureNode {
@@ -125,10 +131,75 @@ export interface ArchitectureNode {
   connectsTo: string[];
 }
 
+export type ValidationSeverity = 'info' | 'warning' | 'critical';
+
+export interface ArchitectureValidationFinding {
+  id: string;
+  severity: ValidationSeverity;
+  category: 'compatibility' | 'redundancy' | 'missing-layer' | 'security' | 'infrastructure' | 'monitoring';
+  title: string;
+  description: string;
+  consequence: string;
+  actionableSuggestion: string;
+  affectedTechnologies?: string[];
+}
+
+export interface ArchitectureValidationReport {
+  projectId: string;
+  status: 'consistent' | 'warnings_detected' | 'critical_issues';
+  score: number; // 0 - 100 consistency score
+  summary: string;
+  findings: ArchitectureValidationFinding[];
+  lastValidatedAt: string;
+}
+
+export type RiskSeverity = 'low' | 'medium' | 'high';
+
+export interface ProjectRiskItem {
+  id: string;
+  category: 'technical' | 'dependency' | 'integration' | 'security' | 'bottleneck' | 'maintenance';
+  title: string;
+  severity: RiskSeverity;
+  likelihood: 'low' | 'medium' | 'high';
+  impact: string;
+  practicalMitigation: string;
+}
+
+export interface ProjectComplexityInsight {
+  overallComplexity: 'Low' | 'Medium' | 'High';
+  score: number; // 0-100
+  confidenceLevel: 'High' | 'Moderate' | 'Limited Data (Assumptions Stated)';
+  keyDrivers: string[];
+  bottlenecks: string[];
+  testingRequirements: string[];
+  deploymentConsiderations: string[];
+  risks: ProjectRiskItem[];
+}
+
+export interface ProjectContext {
+  projectId: string;
+  projectName: string;
+  originalIdea: string;
+  problemStatement: string;
+  targetUsers: string[];
+  platforms: string[];
+  budgetEstimate: string;
+  timelineEstimate: string;
+  complexityLevel: 'Low' | 'Medium' | 'High';
+  complexityFactors: string[];
+  functionalRequirementsCount: number;
+  nonFunctionalRequirementsCount: number;
+  selectedTechnologies: string[];
+  knownConstraints: string[];
+  unresolvedQuestions: string[];
+  assumptions: string[];
+}
+
 export interface RoadmapDeliverable {
   title: string;
   completed: boolean;
   priority?: PriorityLevel;
+  acceptanceCriteria?: string[];
 }
 
 export interface RoadmapPhase {
@@ -136,8 +207,11 @@ export interface RoadmapPhase {
   title: string;
   duration: string;
   status: 'completed' | 'in-progress' | 'upcoming';
+  objective?: string;
+  prerequisites?: string[];
   deliverables: RoadmapDeliverable[];
   dependencies?: string[];
+  potentialRisks?: string[];
 }
 
 export type ResourceCategory = 'Official Documentation' | 'YouTube' | 'Tutorials' | 'Examples' | 'Guides';
@@ -149,6 +223,8 @@ export interface ResourceItem {
   description: string;
   technology: string;
   url: string;
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  relevanceReason?: string;
   readTimeOrDuration?: string;
   isVerified?: boolean;
 }

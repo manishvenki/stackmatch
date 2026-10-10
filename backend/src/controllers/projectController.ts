@@ -220,15 +220,22 @@ export const generatePlan = async (req: Request, res: Response) => {
       }
     });
 
+    const context = aiPlanningService.synthesizeProjectContext(project, requirements, techStack, analysis);
+    const validation = aiPlanningService.validateArchitectureConsistency(project, techStack, architecture, requirements);
+    const risks = aiPlanningService.assessProjectComplexityAndRisks(project, requirements, techStack);
+
     return res.json({
       success: true,
       data: {
         project: updatedProject,
         analysis,
+        context,
         requirements,
         techStack,
         comparisons,
         architecture,
+        validation,
+        risks,
         roadmap,
         resources,
         blueprint
@@ -323,6 +330,14 @@ export const getTechStack = async (req: Request, res: Response) => {
 export const getComparisons = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { category } = req.query;
+    const project = await store.getProjectById(id);
+
+    if (category && project) {
+      const filteredGroup = aiPlanningService.generateComparisons(project, category as string);
+      return res.json({ success: true, data: filteredGroup });
+    }
+
     const comparisons = await store.getComparisons(id);
     return res.json({ success: true, data: comparisons });
   } catch (err: any) {
@@ -335,6 +350,61 @@ export const getArchitecture = async (req: Request, res: Response) => {
     const { id } = req.params;
     const nodes = await store.getArchitecture(id);
     return res.json({ success: true, data: nodes });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const validateArchitecture = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = await store.getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: `Project with ID ${id} not found.` });
+    }
+    const [techs, architecture, reqs] = await Promise.all([
+      store.getTechnologies(id),
+      store.getArchitecture(id),
+      store.getRequirements(id)
+    ]);
+    const report = aiPlanningService.validateArchitectureConsistency(project, techs, architecture, reqs);
+    return res.json({ success: true, data: report });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const getProjectContext = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = await store.getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: `Project with ID ${id} not found.` });
+    }
+    const [reqs, techs] = await Promise.all([
+      store.getRequirements(id),
+      store.getTechnologies(id)
+    ]);
+    const context = aiPlanningService.synthesizeProjectContext(project, reqs, techs);
+    return res.json({ success: true, data: context });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+export const getProjectRisks = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const project = await store.getProjectById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: `Project with ID ${id} not found.` });
+    }
+    const [reqs, techs] = await Promise.all([
+      store.getRequirements(id),
+      store.getTechnologies(id)
+    ]);
+    const insights = aiPlanningService.assessProjectComplexityAndRisks(project, reqs, techs);
+    return res.json({ success: true, data: insights });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }

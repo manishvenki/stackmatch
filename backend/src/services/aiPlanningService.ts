@@ -8,7 +8,12 @@ import {
   ResourceItem,
   ProjectBlueprint,
   IdeaAnalysisResult,
-  FollowUpQuestion
+  FollowUpQuestion,
+  ProjectContext,
+  ArchitectureValidationReport,
+  ArchitectureValidationFinding,
+  ProjectComplexityInsight,
+  ProjectRiskItem
 } from '../../../packages/types/src/index';
 import { config } from '../config/environment';
 
@@ -347,8 +352,9 @@ export class AiPlanningService {
    * Generates tailored technology recommendations with StackMatch suitability scoring.
    */
   public recommendTechStack(project: Project, requirements: Requirement[]): Technology[] {
-    const text = (project.name + ' ' + project.description).toLowerCase();
-    const isMobileHeavy = text.includes('mobile') || text.includes('app') || text.includes('fitness');
+    const text = (project.name + ' ' + (project.description || '')).toLowerCase();
+    const isMobileHeavy = text.includes('mobile') || text.includes('app') || text.includes('fitness') || text.includes('ios') || text.includes('android');
+    const hasPayments = text.includes('food') || text.includes('order') || text.includes('checkout') || text.includes('pay') || text.includes('shop') || text.includes('ecommerce') || text.includes('billing') || text.includes('subscription');
 
     const technologies: Technology[] = [
       {
@@ -369,8 +375,16 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 96, easeOfLearning: 76, scalability: 95, ecosystem: 98 },
+        roleInArchitecture: 'Client-side presentation tier for browser users, responsive management portals, and interactive dashboards.',
+        integrationConsiderations: [
+          'Communicates with Node.js backend over typed REST endpoints with Axios or native fetch',
+          'Shares TypeScript domain contracts with backend models via shared types workspace',
+          'Vite build bundler delivers sub-300ms hot module replacement during active development'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Calculated across 4 weighted dimensions: Developer ecosystem & UI libraries (35%), rendering performance (25%), hiring availability (20%), and zero-cost open-source license (20%).',
         whyRecommended: [
-          'Shared component paradigms and design system models with React Native',
+          'Shared component paradigms and design system models with React Native for cross-platform apps',
           'Rich ecosystem of production-tested UI kits, data-table grids, and form validation libraries',
           'Fast iteration cycles with modern build bundlers (Vite) and TypeScript'
         ],
@@ -405,6 +419,14 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 93, easeOfLearning: 82, scalability: 91, ecosystem: 96 },
+        roleInArchitecture: 'Application services tier handling REST routing, middleware guards, business validation, and webhook dispatch.',
+        integrationConsiderations: [
+          'Processes concurrent HTTP requests with non-blocking event loop',
+          'Interfaces with PostgreSQL via pg/Prisma/Knex connection pooling',
+          'Validates and issues cryptographically signed JWT bearer tokens'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: I/O concurrency handling (35%), unified TypeScript stack with frontend (30%), package ecosystem maturity (20%), and containerization overhead (15%).',
         whyRecommended: [
           'Single language (TypeScript) unified across frontend, mobile, and backend reduces cognitive switching',
           'Efficient async event loop handles simultaneous webhooks and client socket events gracefully',
@@ -429,7 +451,7 @@ export class AiPlanningService {
         category: 'Database',
         tagline: 'Enterprise-grade open-source relational database with strict ACID consistency',
         description: 'Reliable SQL database designed for mission-critical transactional integrity, complex relational queries, and structured data schemas.',
-        matchScore: 95,
+        matchScore: hasPayments ? 96 : 93,
         isRecommended: true,
         keyInfo: {
           category: 'Database Engine',
@@ -441,6 +463,14 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 92, easeOfLearning: 72, scalability: 95, ecosystem: 94 },
+        roleInArchitecture: 'Persistence tier safeguarding transactional consistency, foreign keys, user accounts, and billing ledgers.',
+        integrationConsiderations: [
+          'Requires connection pooler (PgBouncer) under high concurrent request spikes',
+          'Versioned database migration scripts maintain schema evolution safety',
+          'Foreign key constraints guarantee zero orphaned order items or missing account records'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: Strict ACID transaction guarantees (40%), relational referential integrity (30%), JSONB dynamic schema flexibility (15%), and enterprise open-source reliability (15%).',
         whyRecommended: [
           'Guarantees strict ACID transactions — vital to prevent double-charging or phantom order records',
           'Relational foreign keys maintain strict referential integrity between users, orders, and payment items',
@@ -477,6 +507,14 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 95, easeOfLearning: 88, scalability: 96, ecosystem: 95 },
+        roleInArchitecture: 'Stateless authentication protocol securing API routes across both web and native mobile clients.',
+        integrationConsiderations: [
+          'Payload includes user ID, role claims, and standard expiry timestamps',
+          'Transmitted via Authorization header (Bearer scheme) over TLS 1.3',
+          'Pair with short lifespans (15m) or Redis token blacklist for immediate revocation support'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: Stateless horizontal scalability (35%), cross-client compatibility for web and mobile (35%), and zero server session database roundtrips (30%).',
         whyRecommended: [
           'Stateless validation eliminates repetitive database session lookups on every API request',
           'Works identically across React web applications and native mobile clients',
@@ -513,6 +551,14 @@ export class AiPlanningService {
           costProfile: 'Moderate / Tiered'
         },
         metrics: { popularity: 94, easeOfLearning: 86, scalability: 92, ecosystem: 91 },
+        roleInArchitecture: 'External services tier processing digital payments, UPI intents, credit cards, and cryptographic webhook alerts.',
+        integrationConsiderations: [
+          'Webhook endpoints must verify HMAC SHA-256 signatures before confirming orders',
+          'Stores payment transaction reference tokens without touching raw card numbers',
+          'Handles sandbox mock testing in staging environments'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: Regional checkout conversion & UPI support (40%), PCI-DSS offloading (30%), webhook developer tooling (20%), and automated refunds (10%).',
         whyRecommended: [
           'Market-leading transaction success rates with 1-click UPI and mobile checkout modals',
           'Cryptographically verified server webhooks update order status reliably',
@@ -549,6 +595,14 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 95, easeOfLearning: 74, scalability: 97, ecosystem: 98 },
+        roleInArchitecture: 'DevOps infrastructure encapsulating application runtime environments, system packages, and dependencies.',
+        integrationConsiderations: [
+          'Multi-stage Dockerfiles reduce final production container image sizes to under 150MB',
+          'Docker Compose orchestrates full local stack (Node API + PostgreSQL + Redis) with one command',
+          'Images deploy consistently to AWS ECS, GCP Cloud Run, DigitalOcean, or Render'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: Environment parity across dev/staging/prod (40%), container portability (30%), instant rollbacks (20%), and vendor neutrality (10%).',
         whyRecommended: [
           'Completely eliminates "works on my machine" discrepancies between local dev and cloud servers',
           'Spins up complete multi-tier stacks (Node API + PostgreSQL + Redis) in seconds with Docker Compose',
@@ -576,7 +630,7 @@ export class AiPlanningService {
         category: 'Mobile',
         tagline: 'Cross-platform native mobile applications with single TypeScript codebase',
         description: 'Compiles declarative TypeScript to genuine native iOS and Android user interface components.',
-        matchScore: 94,
+        matchScore: 95,
         isRecommended: true,
         keyInfo: {
           category: 'Mobile Framework',
@@ -588,6 +642,14 @@ export class AiPlanningService {
           costProfile: 'Low / Open-Source'
         },
         metrics: { popularity: 93, easeOfLearning: 76, scalability: 92, ecosystem: 95 },
+        roleInArchitecture: 'Native mobile client tier delivering downloadable iOS and Android mobile app experiences.',
+        integrationConsiderations: [
+          'Reuses TypeScript data schemas, validation logic, and API clients from the web application',
+          'Uses Expo SecureStore for encrypted on-device JWT token persistence',
+          'Leverages Expo Notifications for real-time kitchen status and pickup alerts'
+        ],
+        confidenceStatus: 'Verified Match',
+        scoringCriteriaExplanation: 'Evaluated based on: Single-codebase cross-platform cost reduction (40%), true native UI performance (25%), OTA updates (20%), and unified TypeScript paradigm (15%).',
         whyRecommended: [
           'Shared business logic, API clients, and TypeScript models with the web frontend',
           'Single development team builds for both iOS and Android simultaneously',
@@ -611,12 +673,213 @@ export class AiPlanningService {
   }
 
   /**
-   * Generates a side-by-side technology comparison matrix.
+   * Generates a side-by-side technology comparison matrix with multi-category support.
    */
-  public generateComparisons(project: Project): TechComparisonGroup {
+  public generateComparisons(project: Project, categoryFilter?: string): TechComparisonGroup {
+    const availableCategories = ['Databases', 'Frontend', 'Backend', 'Authentication', 'Cloud & Hosting'];
+    const selected = (categoryFilter || 'Databases').toLowerCase();
+
+    if (selected.includes('front')) {
+      return {
+        category: 'Frontend Frameworks',
+        title: 'Frontend Framework Matrix for ' + project.name,
+        availableCategories,
+        technologies: [
+          {
+            name: 'React (Vite)',
+            matchScore: 94,
+            dataStructure: 'Component State & Virtual DOM',
+            relationships: 'Unidirectional Data Flow',
+            scalability: 'Excellent (Modular micro-frontends)',
+            learningCurve: 'Medium',
+            bestFor: 'Responsive portals, complex dashboards, interactive role-based SaaS',
+            realWorldUsage: 'DoorDash, Airbnb, Netflix, Uber',
+            community: 'Massive global ecosystem with endless UI component libraries',
+            isRecommended: true,
+            tradeOffs: 'Requires client-side state decisions; server rendering requires Next.js'
+          },
+          {
+            name: 'Next.js',
+            matchScore: 89,
+            dataStructure: 'React Server Components + Client Hooks',
+            relationships: 'Server/Client Hybrid Architecture',
+            scalability: 'Excellent (Edge caching & SSR)',
+            learningCurve: 'Medium-Hard',
+            bestFor: 'Public-facing SEO content, ecommerce catalogs, blogs',
+            realWorldUsage: 'Target, Nike, Notion, Vercel',
+            community: 'Dominant enterprise full-stack React framework',
+            isRecommended: false,
+            tradeOffs: 'Server runtime complexity and deployment tie-ins with node servers or Vercel'
+          },
+          {
+            name: 'Vue.js',
+            matchScore: 83,
+            dataStructure: 'Two-Way Reactive Proxy Data',
+            relationships: 'Template + Script Binding',
+            scalability: 'Very Good',
+            learningCurve: 'Easy',
+            bestFor: 'Lightweight applications, rapid prototypes, single-developer projects',
+            realWorldUsage: 'GitLab, Nintendo, Behance',
+            community: 'Extremely popular in indie hacker and European/Asian enterprise ecosystems',
+            isRecommended: false,
+            tradeOffs: 'Smaller enterprise library selection compared to React ecosystem'
+          }
+        ]
+      };
+    }
+
+    if (selected.includes('back')) {
+      return {
+        category: 'Backend Runtimes & Frameworks',
+        title: 'Backend Framework Matrix for ' + project.name,
+        availableCategories,
+        technologies: [
+          {
+            name: 'Node.js (Express / Fastify)',
+            matchScore: 92,
+            dataStructure: 'Event-driven Asynchronous Non-blocking I/O',
+            relationships: 'Middleware Request Pipelines',
+            scalability: 'Very High (Horizontal container clustering)',
+            learningCurve: 'Medium',
+            bestFor: 'Real-time REST APIs, webhook processing, microservices, unified TypeScript',
+            realWorldUsage: 'PayPal, LinkedIn, Netflix, Uber',
+            community: 'Largest package ecosystem in computing (npm)',
+            isRecommended: true,
+            tradeOffs: 'Single-threaded event loop requires worker threads for heavy CPU processing'
+          },
+          {
+            name: 'Go (Golang / Gin)',
+            matchScore: 88,
+            dataStructure: 'Compiled Static Binary with Goroutines',
+            relationships: 'Strict Typings & Struct Composition',
+            scalability: 'Maximum (Near C-level concurrency efficiency)',
+            learningCurve: 'Medium-Hard',
+            bestFor: 'Ultra-high-throughput financial ledgers, network proxies, telemetry collectors',
+            realWorldUsage: 'Docker, Kubernetes, Cloudflare, Uber',
+            community: 'Industry gold standard for cloud infrastructure & systems engineering',
+            isRecommended: false,
+            tradeOffs: 'Less rapid prototyping speed compared to Node.js / TypeScript'
+          },
+          {
+            name: 'Python (FastAPI)',
+            matchScore: 85,
+            dataStructure: 'Async Python with Pydantic Validations',
+            relationships: 'Dependency Injection Architecture',
+            scalability: 'Good (Asynchronous event loop with ASGI)',
+            learningCurve: 'Easy-Medium',
+            bestFor: 'AI/ML pipeline integrations, data analytics APIs, scientific computing',
+            realWorldUsage: 'Microsoft, Uber, Netflix',
+            community: 'Unrivaled data science, machine learning, and AI ecosystem',
+            isRecommended: false,
+            tradeOffs: 'Higher memory consumption and lower raw JSON serialization throughput than Node/Go'
+          }
+        ]
+      };
+    }
+
+    if (selected.includes('auth')) {
+      return {
+        category: 'Authentication Protocols',
+        title: 'Authentication Strategy Matrix for ' + project.name,
+        availableCategories,
+        technologies: [
+          {
+            name: 'JWT (JSON Web Tokens)',
+            matchScore: 90,
+            dataStructure: 'Cryptographically Signed Stateless Bearer Tokens',
+            relationships: 'Self-contained Claims & Signatures',
+            scalability: 'Excellent (Zero server session memory required)',
+            learningCurve: 'Easy',
+            bestFor: 'Stateless multi-client REST APIs spanning web and native mobile apps',
+            realWorldUsage: 'Twilio, Auth0, GitHub, Stripe',
+            community: 'Universal open industry standard (RFC 7519)',
+            isRecommended: true,
+            tradeOffs: 'Token revocation requires short lifespans or Redis revocation cache'
+          },
+          {
+            name: 'Session Cookies (Stateful)',
+            matchScore: 80,
+            dataStructure: 'Encrypted Server-Side Session Store (Redis / DB)',
+            relationships: 'Cookie Header Identification',
+            scalability: 'Moderate (Requires centralized session database)',
+            learningCurve: 'Easy',
+            bestFor: 'Monolithic browser-only web applications with automatic CSRF guards',
+            realWorldUsage: 'Traditional Rails, Django, and Laravel web portals',
+            community: 'Decades of mature browser security and httpOnly cookies',
+            isRecommended: false,
+            tradeOffs: 'Difficult cross-domain sharing and awkward native mobile app handling'
+          },
+          {
+            name: 'OAuth 2.0 / Managed Identity (Auth0)',
+            matchScore: 86,
+            dataStructure: 'Federated Identity Delegations & Scopes',
+            relationships: 'Third-party Identity Provider (Google, GitHub, Apple)',
+            scalability: 'Excellent (Offloaded to cloud infrastructure)',
+            learningCurve: 'Medium',
+            bestFor: 'Social logins, enterprise Single Sign-On (SSO / SAML), outsourced compliance',
+            realWorldUsage: 'Atlassian, Slack, Figma',
+            community: 'Standard for corporate B2B SaaS authentication',
+            isRecommended: false,
+            tradeOffs: 'Ongoing monthly recurring SaaS cost; external dependency on provider uptime'
+          }
+        ]
+      };
+    }
+
+    if (selected.includes('cloud') || selected.includes('host') || selected.includes('deploy')) {
+      return {
+        category: 'Cloud & Infrastructure',
+        title: 'Hosting & Deployment Matrix for ' + project.name,
+        availableCategories,
+        technologies: [
+          {
+            name: 'Docker + Cloud Containers (AWS ECS / Render)',
+            matchScore: 91,
+            dataStructure: 'Immutable OCI Containers & Compose Orchestration',
+            relationships: 'Microservice Network Isolation',
+            scalability: 'Very High (Horizontal autoscaling groups)',
+            learningCurve: 'Medium',
+            bestFor: 'Production full-stack web + API + database services with zero lock-in',
+            realWorldUsage: 'Spotify, Shopify, Stripe, GitHub',
+            community: 'De-facto industry standard for cloud computing',
+            isRecommended: true,
+            tradeOffs: 'Requires basic container build pipelines and secret management'
+          },
+          {
+            name: 'Serverless (Vercel / AWS Lambda)',
+            matchScore: 84,
+            dataStructure: 'Ephemeral Stateless Event Functions',
+            relationships: 'Event-driven Invocations',
+            scalability: 'Infinite Instant Scaling',
+            learningCurve: 'Easy-Medium',
+            bestFor: 'Burst-traffic workloads, scheduled cron jobs, lightweight webhooks',
+            realWorldUsage: 'Coca-Cola, Netflix, Bustle',
+            community: 'Massive adoption in modern Jamstack architectures',
+            isRecommended: false,
+            tradeOffs: 'Cold start latencies and database connection exhaustion under concurrency spikes'
+          },
+          {
+            name: 'Traditional Linux VPS (Ubuntu / Nginx)',
+            matchScore: 72,
+            dataStructure: 'Bare Virtual Machine with Systemd Daemons',
+            relationships: 'Local Host Processes',
+            scalability: 'Manual (Vertical RAM/CPU resizing)',
+            learningCurve: 'Medium-Hard',
+            bestFor: 'Low-cost hobby projects, single-server legacy apps',
+            realWorldUsage: 'Small business websites, personal side-projects',
+            community: 'Decades of Linux server tutorials and bash scripts',
+            isRecommended: false,
+            tradeOffs: 'Manual server patching, lack of automated failover or instant scaling'
+          }
+        ]
+      };
+    }
+
+    // Default: Databases
     return {
       category: 'Database & Storage',
       title: 'Database Comparison Matrix for ' + project.name,
+      availableCategories,
       technologies: [
         {
           name: 'PostgreSQL',
@@ -628,7 +891,8 @@ export class AiPlanningService {
           bestFor: 'Orders, payments, structured accounts, strict ACID transaction safety',
           realWorldUsage: 'DoorDash, Uber, Spotify, Twitch',
           community: 'Decades-long global standard with massive community documentation',
-          isRecommended: true
+          isRecommended: true,
+          tradeOffs: 'Requires deliberate migration scripts as data models evolve'
         },
         {
           name: 'MongoDB',
@@ -640,7 +904,8 @@ export class AiPlanningService {
           bestFor: 'Dynamic catalogs, activity feeds, unstructured event logging',
           realWorldUsage: 'Forbes, eBay, Coinbase',
           community: 'Very large modern NoSQL ecosystem',
-          isRecommended: false
+          isRecommended: false,
+          tradeOffs: 'Multi-document transactions require replica set and careful schema governance'
         },
         {
           name: 'MySQL',
@@ -652,7 +917,8 @@ export class AiPlanningService {
           bestFor: 'Traditional web applications and standard content management systems',
           realWorldUsage: 'WordPress, GitHub, Twitter',
           community: 'Massive open source and enterprise deployment presence',
-          isRecommended: false
+          isRecommended: false,
+          tradeOffs: 'Fewer advanced data types and JSON indexing capabilities compared to PostgreSQL'
         }
       ]
     };
@@ -734,11 +1000,39 @@ export class AiPlanningService {
         title: 'Phase 1: Foundation & Core Scaffolding',
         duration: '2–3 weeks',
         status: 'completed',
+        objective: 'Establish monorepo contracts, database schema models, token authorization middleware, and UI primitives.',
+        prerequisites: [
+          'Approved project scope & architecture specification',
+          'Provisioned development database instance'
+        ],
+        potentialRisks: [
+          'Early schema design oversights requiring schema migration rework'
+        ],
         deliverables: [
-          { title: 'Monorepo architecture & shared type definitions', completed: true, priority: 'high' },
-          { title: 'Database schema design and entity migration scripts', completed: true, priority: 'high' },
-          { title: 'JWT token authorization and role-based middleware guards', completed: true, priority: 'high' },
-          { title: 'Design system primitives and responsive layout shell', completed: true, priority: 'high' }
+          {
+            title: 'Monorepo architecture & shared type definitions',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['All packages compile cleanly via tsc', 'Zero circular dependencies']
+          },
+          {
+            title: 'Database schema design and entity migration scripts',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['Foreign key constraints and unique indexes established', 'Seed data loaded']
+          },
+          {
+            title: 'JWT token authorization and role-based middleware guards',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['Secures private routes with 401/403 responses', 'Password hashing via bcrypt']
+          },
+          {
+            title: 'Design system primitives and responsive layout shell',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['Passes mobile and desktop responsiveness checks', 'Accessible contrast']
+          }
         ],
         dependencies: ['Node.js runtime', 'Database provisioning']
       },
@@ -747,11 +1041,40 @@ export class AiPlanningService {
         title: 'Phase 2: Core User Journeys & MVP Operations',
         duration: '4–6 weeks',
         status: 'in-progress',
+        objective: 'Implement end-user catalog browsing, cart operations, transaction checkouts, and operator fulfillment queues.',
+        prerequisites: [
+          'Phase 1 foundation complete and validated',
+          'Payment Gateway sandbox API credentials active'
+        ],
+        potentialRisks: [
+          'Payment webhook delivery failures during simulated edge-case network dropouts',
+          'Concurrency race conditions during simultaneous inventory purchases'
+        ],
         deliverables: [
-          { title: 'Catalog browsing, search index, and real-time filtering', completed: true, priority: 'high' },
-          { title: 'Cart lifecycle management and order placement transaction', completed: true, priority: 'high' },
-          { title: 'Merchant / operator dashboard to accept and fulfill requests', completed: false, priority: 'high' },
-          { title: 'Payment gateway integration with verified webhook callbacks', completed: false, priority: 'high' }
+          {
+            title: 'Catalog browsing, search index, and real-time filtering',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['Instant category filters with under 200ms query latency', 'Search returns relevant results']
+          },
+          {
+            title: 'Cart lifecycle management and order placement transaction',
+            completed: true,
+            priority: 'high',
+            acceptanceCriteria: ['Transactional atomicity prevents partial order creation', 'Cart persists locally']
+          },
+          {
+            title: 'Merchant / operator dashboard to accept and fulfill requests',
+            completed: false,
+            priority: 'high',
+            acceptanceCriteria: ['Operators view orders sorted by timestamp', 'Status transitions emit audit events']
+          },
+          {
+            title: 'Payment gateway integration with verified webhook callbacks',
+            completed: false,
+            priority: 'high',
+            acceptanceCriteria: ['Cryptographically verified signatures on webhooks', 'Idempotent handling of duplicate webhooks']
+          }
         ],
         dependencies: ['Phase 1 Foundation', 'Payment Merchant Keys']
       },
@@ -760,11 +1083,39 @@ export class AiPlanningService {
         title: 'Phase 3: Advanced Features & Real-Time Sync',
         duration: '3–4 weeks',
         status: 'upcoming',
+        objective: 'Introduce live fulfillment status tracking, background push notification dispatches, and business metrics.',
+        prerequisites: [
+          'Phase 2 core transactions operating reliably in staging'
+        ],
+        potentialRisks: [
+          'Operating system background throttle on mobile push notifications',
+          'High query overhead on unindexed reporting analytics tables'
+        ],
         deliverables: [
-          { title: 'Live status tracking and step-by-step fulfillment state', completed: false, priority: 'medium' },
-          { title: 'Automated push notifications and SMS alert dispatches', completed: false, priority: 'medium' },
-          { title: 'Analytics dashboard with exportable reporting metrics', completed: false, priority: 'low' },
-          { title: 'User review and feedback collection loops', completed: false, priority: 'low' }
+          {
+            title: 'Live status tracking and step-by-step fulfillment state',
+            completed: false,
+            priority: 'medium',
+            acceptanceCriteria: ['Diners observe status transition within 2 seconds of vendor action']
+          },
+          {
+            title: 'Automated push notifications and SMS alert dispatches',
+            completed: false,
+            priority: 'medium',
+            acceptanceCriteria: ['Dispatches notification when ticket transitions to ready']
+          },
+          {
+            title: 'Analytics dashboard with exportable reporting metrics',
+            completed: false,
+            priority: 'low',
+            acceptanceCriteria: ['Renders daily sales totals, peak hours, and popular items']
+          },
+          {
+            title: 'User review and feedback collection loops',
+            completed: false,
+            priority: 'low',
+            acceptanceCriteria: ['Collects 1-5 star ratings with optional comment feedback']
+          }
         ],
         dependencies: ['Phase 2 Core Features']
       },
@@ -773,11 +1124,40 @@ export class AiPlanningService {
         title: 'Phase 4: Security Hardening & Production Rollout',
         duration: '2–3 weeks',
         status: 'upcoming',
+        objective: 'Conduct simulated concurrency stress testing, security penetration audits, Docker containerization, and production release.',
+        prerequisites: [
+          'Feature freeze complete on core workflow milestones',
+          'Production cloud hosting cluster provisioned'
+        ],
+        potentialRisks: [
+          'Database connection exhaustion during burst concurrency spikes without PgBouncer',
+          'Cold restart delays during cloud container redeployments'
+        ],
         deliverables: [
-          { title: 'Concurrency stress testing under simulated peak traffic spikes', completed: false, priority: 'high' },
-          { title: 'End-to-end security audit and input sanitization check', completed: false, priority: 'high' },
-          { title: 'Production containerization with Docker and cloud deployment', completed: false, priority: 'high' },
-          { title: 'Pilot user rollout and telemetry monitoring setup', completed: false, priority: 'medium' }
+          {
+            title: 'Concurrency stress testing under simulated peak traffic spikes',
+            completed: false,
+            priority: 'high',
+            acceptanceCriteria: ['Sustains 500+ concurrent requests with sub-500ms latency and 0% error rate']
+          },
+          {
+            title: 'End-to-end security audit and input sanitization check',
+            completed: false,
+            priority: 'high',
+            acceptanceCriteria: ['Zero SQL injection, XSS, or unauthorized privilege escalation vulnerabilities']
+          },
+          {
+            title: 'Production containerization with Docker and cloud deployment',
+            completed: false,
+            priority: 'high',
+            acceptanceCriteria: ['CI/CD pipeline builds and passes automated health check verification']
+          },
+          {
+            title: 'Pilot user rollout and telemetry monitoring setup',
+            completed: false,
+            priority: 'medium',
+            acceptanceCriteria: ['Live error tracking (Sentry) and performance metrics (Prometheus/Grafana) active']
+          }
         ],
         dependencies: ['Phase 3 Features', 'Cloud Production Environment']
       }
@@ -787,7 +1167,7 @@ export class AiPlanningService {
   }
 
   /**
-   * Generates learning resources and official documentation for the project.
+   * Generates learning resources and official documentation with difficulty levels.
    */
   public generateResources(technologies: Technology[]): ResourceItem[] {
     return [
@@ -798,6 +1178,8 @@ export class AiPlanningService {
         description: 'Comprehensive guide covering component lifecycle, state hooks, and high-performance rendering patterns.',
         technology: 'React',
         url: 'https://react.dev',
+        difficulty: 'Beginner',
+        relevanceReason: 'Essential foundation for constructing responsive UI components, managing client state, and connecting to the backend API.',
         readTimeOrDuration: '15 min read',
         isVerified: true
       },
@@ -808,6 +1190,8 @@ export class AiPlanningService {
         description: 'Structuring scalable RESTful APIs, centralized error middleware, and security practices.',
         technology: 'Node.js',
         url: 'https://expressjs.com',
+        difficulty: 'Intermediate',
+        relevanceReason: 'Directly applicable for architecting the application service tier, implementing JWT middleware, and handling async webhook callbacks.',
         readTimeOrDuration: '20 min read',
         isVerified: true
       },
@@ -818,6 +1202,8 @@ export class AiPlanningService {
         description: 'Modeling foreign keys, indexes, and concurrency locks to guarantee zero duplicate charges.',
         technology: 'PostgreSQL',
         url: 'https://www.postgresql.org/docs/',
+        difficulty: 'Intermediate',
+        relevanceReason: 'Crucial for maintaining data integrity between users, orders, and payment ledgers during high concurrent rushes.',
         readTimeOrDuration: '25 min read',
         isVerified: true
       },
@@ -828,6 +1214,8 @@ export class AiPlanningService {
         description: 'How to structure role claims safely and manage short-lived access tokens with refresh rotation.',
         technology: 'JWT',
         url: 'https://jwt.io/introduction',
+        difficulty: 'Intermediate',
+        relevanceReason: 'Provides secure, stateless session handling across both web browser users and mobile client apps without database session overhead.',
         readTimeOrDuration: '12 min read',
         isVerified: true
       },
@@ -838,10 +1226,327 @@ export class AiPlanningService {
         description: 'Step-by-step multi-stage Dockerfiles and Docker Compose configuration for Node and Postgres.',
         technology: 'Docker',
         url: 'https://docs.docker.com/get-started/',
+        difficulty: 'Advanced',
+        relevanceReason: 'Standardizes the build and run environment so local development matches cloud staging and production flawlessly.',
         readTimeOrDuration: '18 min guide',
         isVerified: true
       }
     ];
+  }
+
+  /**
+   * Consolidates all available project information into a structured Project Context.
+   */
+  public synthesizeProjectContext(
+    project: Project,
+    requirements: Requirement[],
+    technologies: Technology[],
+    analysis?: IdeaAnalysisResult
+  ): ProjectContext {
+    const fnReqs = requirements.filter(r => r.type === 'functional').length;
+    const nonFnReqs = requirements.filter(r => r.type === 'non-functional').length;
+    const selectedTechNames = technologies.map(t => t.name);
+
+    const problem = analysis?.problemStatement ||
+      project.description ||
+      'Users require a streamlined digital workflow to turn ideas into structured architecture and execution roadmaps.';
+
+    const targetUsers = analysis?.targetUsers ||
+      project.summary?.primaryUsers ||
+      ['Standard Users', 'Administrators'];
+
+    const platforms = analysis?.platformRequirements ||
+      (project.summary?.projectType ? [project.summary.projectType] : ['Responsive Web', 'Mobile App']);
+
+    const complexityLevel = project.summary?.estimatedComplexity || 'Medium';
+
+    const complexityFactors: string[] = [
+      `${targetUsers.length} distinct user personas requiring role-based access control (RBAC)`,
+      `${requirements.length} scoped requirements (${fnReqs} functional, ${nonFnReqs} non-functional)`,
+      platforms.length > 1 ? 'Multi-platform presentation tier (Web + Mobile)' : 'Single presentation client',
+      selectedTechNames.includes('Razorpay / Stripe') ? 'Cryptographically verified online payment integration' : 'Standard data management without payment gateways'
+    ];
+
+    const knownConstraints = analysis?.constraints || [
+      'Sub-500ms API response latency under concurrent rush periods',
+      'Mobile-responsive layout adhering to accessible contrast guidelines',
+      'Stateless token authentication with encrypted data transmission'
+    ];
+
+    const unresolvedQuestions = analysis?.unresolvedQuestions || [
+      'Expected concurrent user volume during first 90 days of production launch',
+      'Specific regional regulatory compliance mandates (e.g. data localization)'
+    ];
+
+    const assumptions = analysis?.assumptions || [
+      'End-users operate modern browsers or smartphones with internet connectivity',
+      'Cloud database and third-party payment gateway infrastructure are budgeted for'
+    ];
+
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      originalIdea: project.description || project.name,
+      problemStatement: problem,
+      targetUsers,
+      platforms,
+      budgetEstimate: 'Bootstrapped / Early Stage (Estimated $500–$2,000 cloud staging & tools)',
+      timelineEstimate: project.summary?.estimatedTimeline || '3–5 months for full MVP rollout',
+      complexityLevel,
+      complexityFactors,
+      functionalRequirementsCount: fnReqs,
+      nonFunctionalRequirementsCount: nonFnReqs,
+      selectedTechnologies: selectedTechNames,
+      knownConstraints,
+      unresolvedQuestions,
+      assumptions
+    };
+  }
+
+  /**
+   * Validates selected technology stack against proposed architecture and detects inconsistencies.
+   */
+  public validateArchitectureConsistency(
+    project: Project,
+    technologies: Technology[],
+    architecture: ArchitectureNode[],
+    requirements: Requirement[]
+  ): ArchitectureValidationReport {
+    const findings: ArchitectureValidationFinding[] = [];
+    let score = 100;
+
+    const techNames = technologies.map(t => t.name.toLowerCase());
+    const archTechs = architecture.map(a => a.technology.toLowerCase());
+    const hasClient = architecture.some(a => a.layer === 'client');
+    const hasApi = architecture.some(a => a.layer === 'api');
+    const hasData = architecture.some(a => a.layer === 'data');
+    const hasPayments = architecture.some(a => a.id === 'arch_payments' || a.technology.toLowerCase().includes('payment') || a.technology.toLowerCase().includes('stripe') || a.technology.toLowerCase().includes('razorpay'));
+    const hasStorage = architecture.some(a => a.id === 'arch_storage' || a.technology.toLowerCase().includes('storage') || a.technology.toLowerCase().includes('s3'));
+
+    const reqText = requirements.map(r => r.title + ' ' + r.description).join(' ').toLowerCase();
+    const needsPayments = reqText.includes('payment') || reqText.includes('checkout') || reqText.includes('upi') || reqText.includes('billing');
+    const needsMobile = reqText.includes('mobile') || project.name.toLowerCase().includes('food') || project.name.toLowerCase().includes('fitness');
+
+    // 1. Missing Presentation Tier Check
+    if (!hasClient) {
+      score -= 25;
+      findings.push({
+        id: 'val_missing_client',
+        severity: 'critical',
+        category: 'missing-layer',
+        title: 'Missing Client Presentation Tier',
+        description: 'The architectural topography does not define a user-facing client application tier.',
+        consequence: 'End-users have no user interface to interact with backend services.',
+        actionableSuggestion: 'Add a Web Client (React/Next.js) or Mobile Client (React Native) to Layer 1.'
+      });
+    }
+
+    // 2. Missing Application Services Tier Check
+    if (!hasApi) {
+      score -= 25;
+      findings.push({
+        id: 'val_missing_api',
+        severity: 'critical',
+        category: 'missing-layer',
+        title: 'Missing Application Services / API Gateway Tier',
+        description: 'Clients cannot communicate directly with databases without an application API tier.',
+        consequence: 'Direct database exposure is a critical security vulnerability and violates tier isolation.',
+        actionableSuggestion: 'Implement a Node.js Express or FastAPI backend API gateway.'
+      });
+    }
+
+    // 3. Missing Persistence Tier Check
+    if (!hasData) {
+      score -= 25;
+      findings.push({
+        id: 'val_missing_data',
+        severity: 'critical',
+        category: 'missing-layer',
+        title: 'Missing Persistence Datastore',
+        description: 'No relational or document database is configured in the persistence tier.',
+        consequence: 'Transactional state, user accounts, and business records will be lost on server restart.',
+        actionableSuggestion: 'Add PostgreSQL or MongoDB to Layer 3 for ACID transaction persistence.'
+      });
+    }
+
+    // 4. Payment Gateway Consistency Check
+    if (needsPayments && !hasPayments) {
+      score -= 15;
+      findings.push({
+        id: 'val_missing_payments',
+        severity: 'warning',
+        category: 'compatibility',
+        title: 'Payment Gateway Missing for Transactional Requirements',
+        description: 'Requirements mandate digital payment checkout, but no payment gateway exists in External Services.',
+        consequence: 'Users cannot complete purchases or automated refunds online.',
+        actionableSuggestion: 'Incorporate Razorpay or Stripe into Layer 4 (External Services Tier) with webhook verification.'
+      });
+    }
+
+    // 5. Mobile Tier Alignment Check
+    const hasMobileNode = architecture.some(a => a.id.includes('mobile') || a.technology.toLowerCase().includes('native') || a.technology.toLowerCase().includes('mobile'));
+    if (needsMobile && !hasMobileNode) {
+      score -= 10;
+      findings.push({
+        id: 'val_mobile_recommended',
+        severity: 'info',
+        category: 'infrastructure',
+        title: 'Mobile Client Recommended for Consumer On-The-Go Persona',
+        description: 'Product requirements indicate on-the-go user check-ins, but currently only a web client is defined.',
+        consequence: 'Mobile web browser sessions lack native hardware push notifications and offline caching.',
+        actionableSuggestion: 'Consider adopting React Native (Expo) to deliver an optimized cross-platform smartphone app.'
+      });
+    }
+
+    // 6. Object Media Storage Check
+    if (!hasStorage) {
+      score -= 10;
+      findings.push({
+        id: 'val_missing_storage',
+        severity: 'warning',
+        category: 'infrastructure',
+        title: 'Missing Dedicated Media & Object Storage',
+        description: 'Storing user avatar uploads, dish images, or generated PDF documents directly in SQL databases causes bloat.',
+        consequence: 'Rapid database disk growth and degraded query throughput over time.',
+        actionableSuggestion: 'Connect an S3-compatible cloud object store (AWS S3, Cloudflare R2, or MinIO) in Layer 4.'
+      });
+    }
+
+    // 7. Token Revocation & Observability Strategy
+    const hasMonitoring = architecture.some(a => a.technology.toLowerCase().includes('sentry') || a.technology.toLowerCase().includes('prometheus') || a.technology.toLowerCase().includes('monitoring'));
+    if (!hasMonitoring) {
+      score -= 5;
+      findings.push({
+        id: 'val_missing_monitoring',
+        severity: 'info',
+        category: 'monitoring',
+        title: 'Production Telemetry & Error Logging Advisory',
+        description: 'No centralized error monitoring or latency tracing node is formally mapped.',
+        consequence: 'Uncaught production exceptions and latency regressions may go unnoticed until reported by users.',
+        actionableSuggestion: 'Configure Sentry for crash monitoring and Prometheus/Grafana for API response time metrics in Phase 4.'
+      });
+    }
+
+    // Determine status
+    let status: 'consistent' | 'warnings_detected' | 'critical_issues' = 'consistent';
+    if (findings.some(f => f.severity === 'critical')) {
+      status = 'critical_issues';
+    } else if (findings.length > 0) {
+      status = 'warnings_detected';
+    }
+
+    const summary = status === 'consistent'
+      ? 'The selected technology stack is fully aligned with the 4-tier system architecture and all stated requirements.'
+      : status === 'warnings_detected'
+      ? `Architecture validation identified ${findings.length} actionable advisory points with recommended mitigations.`
+      : `Critical architectural gaps detected: immediate adjustment recommended before production implementation.`;
+
+    return {
+      projectId: project.id,
+      status,
+      score: Math.max(score, 40),
+      summary,
+      findings,
+      lastValidatedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Assesses project complexity, technical bottlenecks, and actionable risk mitigations.
+   */
+  public assessProjectComplexityAndRisks(
+    project: Project,
+    requirements: Requirement[],
+    technologies: Technology[]
+  ): ProjectComplexityInsight {
+    const text = (project.name + ' ' + (project.description || '')).toLowerCase();
+    const reqCount = requirements.length;
+    const hasPayments = text.includes('food') || text.includes('order') || text.includes('pay') || text.includes('ecommerce') || text.includes('cart');
+    const isMobile = text.includes('mobile') || text.includes('fitness') || text.includes('app');
+
+    let complexityScore = 50;
+    if (reqCount > 6) complexityScore += 15;
+    if (hasPayments) complexityScore += 15;
+    if (isMobile) complexityScore += 10;
+
+    const overallComplexity: 'Low' | 'Medium' | 'High' =
+      complexityScore >= 75 ? 'High' : complexityScore >= 50 ? 'Medium' : 'Low';
+
+    const keyDrivers = [
+      `${reqCount} categorized user requirements requiring end-to-end implementation and testing`,
+      hasPayments ? 'Online payment processing requiring transactional ACID consistency and webhook idempotency' : 'Standard CRUD operations with identity authorization',
+      isMobile ? 'Cross-platform mobile presentation tier requiring native builds and app store compliance' : 'Responsive web presentation portal'
+    ];
+
+    const bottlenecks = [
+      'Simultaneous lunch rush / peak traffic spikes causing database connection exhaustion if pooling is absent',
+      'Third-party payment gateway webhook callback delays or intermittent timeouts',
+      'Complex role-based permissions logic across multi-persona views'
+    ];
+
+    const testingRequirements = [
+      'Unit testing covering business calculation rules, tax/fee math, and token validation (>80% coverage)',
+      'Integration testing verifying API routes, database CRUD queries, and status transition workflows',
+      'Idempotency testing for payment webhook handlers under duplicate delivery attempts',
+      'Load testing simulating 500+ concurrent checkouts to benchmark 95th percentile latency'
+    ];
+
+    const deploymentConsiderations = [
+      'Configure connection pooling (PgBouncer) between Node.js API services and PostgreSQL',
+      'Store all secrets (JWT_SECRET, payment credentials) in environment variables, never committed to Git',
+      'Set up health check endpoints (/api/v1/health) for container auto-restart and load balancer pings',
+      'Establish automated database snapshot backups prior to running versioned migration scripts'
+    ];
+
+    const risks: ProjectRiskItem[] = [
+      {
+        id: 'risk_peak_concurrency',
+        category: 'bottleneck',
+        title: 'Peak Rush Concurrency Spike Bottleneck',
+        severity: 'high',
+        likelihood: 'medium',
+        impact: 'High latency or timeout errors during concentrated traffic periods (e.g. 12:00 PM – 2:00 PM).',
+        practicalMitigation: 'Implement Redis caching for static menu catalogs and enable database connection pooling with horizontal container scaling.'
+      },
+      {
+        id: 'risk_payment_webhook',
+        category: 'integration',
+        title: 'Payment Webhook Delivery Interruption',
+        severity: 'medium',
+        likelihood: 'medium',
+        impact: 'Customer is charged by bank/UPI, but platform order record remains in "Payment Pending" state.',
+        practicalMitigation: 'Implement an automated reconciliation cron polling the payment gateway status API for pending transactions every 60 seconds.'
+      },
+      {
+        id: 'risk_auth_revocation',
+        category: 'security',
+        title: 'Stateless Token Revocation Delay',
+        severity: 'medium',
+        likelihood: 'low',
+        impact: 'Compromised JWT credentials remain technically valid until expiration time elapses.',
+        practicalMitigation: 'Enforce short access token lifetimes (15 minutes) paired with rotating refresh tokens and a Redis token blacklist.'
+      },
+      {
+        id: 'risk_migration_drift',
+        category: 'technical',
+        title: 'Database Schema Drift Between Environments',
+        severity: 'medium',
+        likelihood: 'low',
+        impact: 'Code relies on database columns that are missing in staging or production.',
+        practicalMitigation: 'Enforce version-controlled migration scripts applied automatically via CI/CD before service startup.'
+      }
+    ];
+
+    return {
+      overallComplexity,
+      score: complexityScore,
+      confidenceLevel: 'High',
+      keyDrivers,
+      bottlenecks,
+      testingRequirements,
+      deploymentConsiderations,
+      risks
+    };
   }
 
   /**

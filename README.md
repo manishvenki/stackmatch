@@ -217,12 +217,16 @@ cp .env.example .env
 - `POST /:id/analyze-idea`: Analyze natural language prompt and extract problem statement, user roles, constraints, and follow-up questions.
 - `POST /:id/generate-plan`: Generate complete requirements, tech stack recommendations, architecture topography, and roadmap milestones.
 - `GET /:id/plan`: Retrieve the complete consolidated project plan.
+- `GET /:id/context`: Retrieve synthesized Project Context (problem statement, user personas, stated boundaries, constraints, unresolved questions).
+- `GET /:id/architecture/validate`: Run automated Architecture Consistency Validation (0–100 health score, missing layers, incompatible services, actionable mitigations).
+- `GET /:id/insights/risks`: Run Technical Risk & Complexity Assessment (bottlenecks, testing requirements, deployment considerations, risk matrices).
+- `GET /:id/comparisons?category=...`: Get multi-category technology comparison matrix (Databases, Frontend, Backend, Authentication, Cloud & Hosting).
 - `GET /:id/requirements`: Retrieve prioritized requirements.
 - `PUT /:id/requirements/:reqId`: Update requirement status or description.
 - `DELETE /:id/requirements/:reqId`: Remove a requirement.
-- `GET /:id/tech-stack`: Get recommended technologies with trade-offs.
-- `GET /:id/architecture`: Get multi-tier architecture nodes.
-- `GET /:id/roadmap`: Get 4-phase milestone deliverables.
+- `GET /:id/tech-stack`: Get recommended technologies with architectural roles, integration considerations, and scoring rationale.
+- `GET /:id/architecture`: Get multi-tier architecture nodes and consistency health report.
+- `GET /:id/roadmap`: Get 4-phase sequential milestones with prerequisites, acceptance criteria, and risks.
 - `GET /:id/blueprint`: Get executive blueprint spec.
 - `GET /:id/messages`: Retrieve conversation history.
 - `POST /:id/messages`: Send user message and get structured AI reply.
@@ -231,12 +235,15 @@ cp .env.example .env
 
 ## 9. Production Readiness & Deployment Checklist
 
-- [x] **Monorepo Contracts:** `@stackmatch/types` built with full type coverage.
-- [x] **API Test Suite:** 20/20 automated tests passing across auth, project lifecycle, and AI planning.
+- [x] **Monorepo Contracts:** `@stackmatch/types` built with full type coverage across intelligence entities.
+- [x] **API Test Suite:** 24/24 automated tests passing across auth, project lifecycle, context engine, validation, and risks.
 - [x] **Production Bundle:** Vite production build compiles with zero TypeScript errors.
-- [x] **Data Continuity:** Local storage and backend state synchronization persist project work across reloads.
-- [x] **Resilient Fallbacks:** Deterministic fallback planning engine functions without external AI keys.
-- [x] **Security Hardening:** Request timeouts, sanitized prompts, shielded error messages, CORS protection, and optional/required JWT guards.
+- [x] **Project Context Engine:** Consolidates original idea, problem statement, target users, platform requirements, timeline/budget assumptions, complexity factors, and unresolved questions without fabricating unknown requirements.
+- [x] **Architecture Consistency Validation:** Analyzes presentation, API, persistence, cache, payment, and telemetry layers, computing actionable findings and health scores.
+- [x] **Complexity & Technical Risk Insights:** Evaluates complexity drivers, peak concurrency bottlenecks, payment webhook risks, and practical mitigations.
+- [x] **Multi-Category Comparisons:** Dynamic matrix comparing Databases, Frontend, Backend, Authentication, and Cloud & Hosting options.
+- [x] **Transparent Recommendation Scoring:** Technology cards explain scoring criteria and role in architecture.
+- [x] **Enhanced Roadmap & Learning Resources:** Milestone prerequisites, deliverable acceptance criteria, and difficulty-rated learning resources.
 - [x] **Neutral Minimal Design:** Consistent token palette, responsive layouts, and accessible contrast.
 - [x] **Blueprint Export:** Multi-format export (Print/PDF, Markdown, JSON) fully operational.
 - [x] **Freelancer Discovery:** Authentic "Coming Soon" preview adhering to product boundaries.
@@ -247,10 +254,12 @@ cp .env.example .env
 
 StackMatch currently focuses on:
 - Product discussion and requirement clarification
-- Requirements prioritization and categorization
-- Technology selection and trade-off matrices
-- Architecture planning and topography visualization
-- Development roadmap planning
+- Project context consolidation and transparent constraint modeling
+- Requirements prioritization and acceptance criteria specification
+- Technology stack intelligence, suitability scoring, and multi-category trade-offs
+- Architecture consistency validation and system health diagnostics
+- Technical risk identification, bottleneck detection, and practical mitigations
+- Phased development roadmap planning
 - Build-ready blueprint generation and multi-format export
 
 StackMatch is **NOT** currently an autonomous:
@@ -261,3 +270,4 @@ StackMatch is **NOT** currently an autonomous:
 ---
 
 *StackMatch — Plan smarter. Choose better. Build with confidence.*
+
