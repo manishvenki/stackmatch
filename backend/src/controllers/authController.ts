@@ -7,19 +7,35 @@ import { AuthenticatedRequest } from '../middleware/auth';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, username, email, password, confirmPassword } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Name, email, and password are required.'
+        error: 'Full name, email address, and password are required.'
+      });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid email address.'
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        error: 'Password must be at least 6 characters.'
+        error: 'Password must be at least 6 characters long.'
+      });
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Passwords do not match. Please verify your confirmation.'
       });
     }
 
@@ -27,13 +43,13 @@ export const register = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        error: 'An account with this email already exists.'
+        error: 'An account with this email address already exists.'
       });
     }
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
-    const user = await store.createUser(name, email, passwordHash);
+    const user = await store.createUser(name, email, passwordHash, username);
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -52,6 +68,38 @@ export const register = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: err.message || 'Failed to register account.'
+    });
+  }
+};
+
+export const saveOnboarding = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required to save onboarding preferences.'
+      });
+    }
+
+    const onboardingData = req.body;
+    const updatedUser = await store.updateUserOnboarding(req.user.id, onboardingData);
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User account not found.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: updatedUser,
+      message: 'Onboarding profile saved successfully.'
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: err.message || 'Failed to persist onboarding preferences.'
     });
   }
 };

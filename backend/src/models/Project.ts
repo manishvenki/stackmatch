@@ -1,9 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IProjectDocument extends Document {
+  id: string;
   userId: string;
   name: string;
   description: string;
+  category?: string;
+  problemStatement?: string;
   status: 'draft' | 'in-progress' | 'completed' | 'archived';
   currentStage: 'idea' | 'requirements' | 'planning' | 'finalize';
   summary?: {
@@ -15,6 +18,9 @@ export interface IProjectDocument extends Document {
     estimatedTimeline: string;
     goals: string[];
     targetAudience: string[];
+    constraints?: string[];
+    assumptions?: string[];
+    userRoles?: string[];
   };
   createdAt: Date;
   updatedAt: Date;
@@ -22,9 +28,12 @@ export interface IProjectDocument extends Document {
 
 const ProjectSchema = new Schema<IProjectDocument>(
   {
+    id: { type: String, required: true, unique: true, index: true },
     userId: { type: String, required: true, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
+    category: { type: String, default: 'Web Application' },
+    problemStatement: { type: String, default: '' },
     status: {
       type: String,
       enum: ['draft', 'in-progress', 'completed', 'archived'],
@@ -44,9 +53,12 @@ const ProjectSchema = new Schema<IProjectDocument>(
       estimatedTimeline: { type: String, default: '3–6 months' },
       goals: [{ type: String }],
       targetAudience: [{ type: String }],
+      constraints: [{ type: String }],
+      assumptions: [{ type: String }],
+      userRoles: [{ type: String }],
     },
   },
   { timestamps: true }
 );
 
-export const ProjectModel = mongoose.model<IProjectDocument>('Project', ProjectSchema);
+export const ProjectModel = mongoose.models.Project || mongoose.model<IProjectDocument>('Project', ProjectSchema);

@@ -157,15 +157,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </Button>
               )}
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onNavigate('landing')}
-                className="h-8 text-xs text-[#687280] hover:text-[#111827]"
-              >
-                Public Site
-              </Button>
-
               {/* User Account Capsule */}
               {currentUser && (
                 <div className="relative">
@@ -200,12 +191,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </button>
                       <button
                         onClick={() => {
-                          onNavigate('landing');
+                          onNavigate('settings');
                           setUserDropdownOpen(false);
                         }}
                         className="w-full text-left px-3 py-1.5 text-xs text-[#374151] hover:bg-[#F9FAFB] cursor-pointer"
                       >
-                        Marketing Overview
+                        Workspace Settings
+                      </button>
+                      <button
+                        onClick={() => {
+                          onNavigate('landing');
+                          setUserDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-[#687280] hover:bg-[#F9FAFB] cursor-pointer"
+                      >
+                        Marketing Site
                       </button>
                       {onLogout && (
                         <button

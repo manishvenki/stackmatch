@@ -1,6 +1,12 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+import { UserModel } from '../models/User';
+import { ProjectModel } from '../models/Project';
+import { ConversationModel } from '../models/Conversation';
+import { BlueprintModel } from '../models/Blueprint';
 import {
   User,
+  UserOnboardingData,
   Project,
   Requirement,
   Technology,
@@ -71,8 +77,8 @@ class InMemoryStore {
   }
 
   // User methods
-  public async createUser(name: string, email: string, passwordHash: string): Promise<User> {
-    const existing = this.users.get(email.toLowerCase());
+  public async createUser(name: string, email: string, passwordHash: string, username?: string): Promise<User> {
+    const existing = await this.findUserByEmail(email);
     if (existing) {
       throw new Error('User with this email already exists');
     }
@@ -80,35 +86,146 @@ class InMemoryStore {
     const user: StoredUser = {
       id,
       name,
+      username: username || name.toLowerCase().replace(/\s+/g, '_'),
       email: email.toLowerCase(),
       role: 'user',
       passwordHash,
+      onboardingCompleted: false,
       createdAt: new Date().toISOString()
     };
     this.users.set(id, user);
     this.users.set(email.toLowerCase(), user);
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await UserModel.create({
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          role: user.role,
+          onboardingCompleted: false
+        });
+      } catch (err: any) {
+        console.warn('[Store] MongoDB user creation notice:', err.message);
+      }
+    }
+
     const { passwordHash: _, ...safeUser } = user;
     return safeUser;
   }
 
   public async findUserByEmail(email: string): Promise<StoredUser | null> {
-    return this.users.get(email.toLowerCase()) || null;
+    const mem = this.users.get(email.toLowerCase());
+    if (mem) return mem;
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const doc = await UserModel.findOne({ email: email.toLowerCase() });
+        if (doc) {
+          const user: StoredUser = {
+            id: (doc as any)._id?.toString() || (doc as any).id,
+            name: doc.name,
+            username: doc.username,
+            email: doc.email,
+            role: doc.role,
+            passwordHash: doc.passwordHash,
+            onboardingCompleted: doc.onboardingCompleted,
+            onboardingResponses: doc.onboardingResponses,
+            createdAt: doc.createdAt?.toISOString() || new Date().toISOString()
+          };
+          this.users.set(user.id, user);
+          this.users.set(user.email.toLowerCase(), user);
+          return user;
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   public async findUserById(id: string): Promise<User | null> {
-    const user = this.users.get(id);
-    if (!user) return null;
-    const { passwordHash: _, ...safeUser } = user;
-    return safeUser;
+    const mem = this.users.get(id);
+    if (mem) {
+      const { passwordHash: _, ...safeUser } = mem;
+      return safeUser;
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const doc = await UserModel.findById(id);
+        if (doc) {
+          const user: StoredUser = {
+            id: doc._id.toString(),
+            name: doc.name,
+            username: doc.username,
+            email: doc.email,
+            role: doc.role,
+            passwordHash: doc.passwordHash,
+            onboardingCompleted: doc.onboardingCompleted,
+            onboardingResponses: doc.onboardingResponses,
+            createdAt: doc.createdAt?.toISOString() || new Date().toISOString()
+          };
+          this.users.set(user.id, user);
+          this.users.set(user.email.toLowerCase(), user);
+          const { passwordHash: _, ...safeUser } = user;
+          return safeUser;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  public async updateUserOnboarding(userId: string, data: UserOnboardingData): Promise<User | null> {
+    const mem = this.users.get(userId);
+    if (mem) {
+      mem.onboardingCompleted = true;
+      mem.onboardingResponses = { ...data, completedAt: new Date().toISOString() };
+      this.users.set(userId, mem);
+      this.users.set(mem.email.toLowerCase(), mem);
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await UserModel.findOneAndUpdate(
+          { $or: [{ _id: mongoose.isValidObjectId(userId) ? userId : undefined }, { email: mem?.email }] },
+          { onboardingCompleted: true, onboardingResponses: { ...data, completedAt: new Date().toISOString() } }
+        );
+      } catch (err: any) {
+        console.warn('[Store] MongoDB onboarding update notice:', err.message);
+      }
+    }
+
+    return this.findUserById(userId);
   }
 
   // Project methods
   public async getProjects(userId?: string): Promise<Project[]> {
-    const all = Array.from(this.projects.values());
     if (userId) {
-      return all.filter((p) => p.userId === userId || p.userId === 'usr_demo_01');
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const docs = await ProjectModel.find({ userId });
+          for (const doc of docs) {
+            if (!this.projects.has(doc.id)) {
+              this.projects.set(doc.id, {
+                id: doc.id,
+                userId: doc.userId,
+                name: doc.name,
+                description: doc.description,
+                category: doc.category,
+                problemStatement: doc.problemStatement,
+                status: doc.status,
+                currentStage: doc.currentStage,
+                summary: doc.summary as any,
+                createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+                updatedAt: doc.updatedAt?.toISOString() || new Date().toISOString()
+              });
+            }
+          }
+        } catch (_) {}
+      }
+      return Array.from(this.projects.values()).filter((p) => p.userId === userId || (p.userId === 'usr_demo_01' && userId === 'usr_demo_01'));
     }
-    return all;
+    return Array.from(this.projects.values());
   }
 
   public async getProjectById(id: string): Promise<Project | null> {
@@ -231,6 +348,29 @@ class InMemoryStore {
     this.roadmaps.set(id, [...sampleRoadmap]);
     this.resources.set(id, [...sampleResources]);
 
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await ProjectModel.create({
+          id: newProject.id,
+          userId: newProject.userId,
+          name: newProject.name,
+          description: newProject.description,
+          category: newProject.category,
+          problemStatement: newProject.problemStatement,
+          status: newProject.status,
+          currentStage: newProject.currentStage,
+          summary: newProject.summary,
+        });
+        await ConversationModel.create({
+          projectId: id,
+          userId,
+          messages: [initialMessage],
+        });
+      } catch (err: any) {
+        console.warn('[Store] MongoDB project creation notice:', err.message);
+      }
+    }
+
     return newProject;
   }
 
@@ -251,6 +391,27 @@ class InMemoryStore {
       updatedAt: new Date().toISOString()
     };
     this.projects.set(id, updated);
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await ProjectModel.findOneAndUpdate(
+          { id },
+          {
+            name: updated.name,
+            description: updated.description,
+            category: updated.category,
+            problemStatement: updated.problemStatement,
+            status: updated.status,
+            currentStage: updated.currentStage,
+            summary: updated.summary,
+            updatedAt: new Date(),
+          }
+        );
+      } catch (err: any) {
+        console.warn('[Store] MongoDB project update notice:', err.message);
+      }
+    }
+
     return updated;
   }
 
@@ -265,19 +426,51 @@ class InMemoryStore {
     this.roadmaps.delete(id);
     this.resources.delete(id);
     this.blueprints.delete(id);
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await ProjectModel.findOneAndDelete({ id });
+        await ConversationModel.findOneAndDelete({ projectId: id });
+        await BlueprintModel.findOneAndDelete({ projectId: id });
+      } catch (err: any) {
+        console.warn('[Store] MongoDB project delete notice:', err.message);
+      }
+    }
+
     return true;
   }
 
   // Conversation & Message methods
   public async getMessages(projectId: string): Promise<Message[]> {
-    return this.conversations.get(projectId) || [];
+    const mem = this.conversations.get(projectId);
+    if (mem && mem.length > 0) return mem;
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const doc = await ConversationModel.findOne({ projectId });
+        if (doc && doc.messages?.length) {
+          const list = doc.messages.map((m: any) => ({
+            id: m.id,
+            projectId,
+            role: m.role,
+            content: m.content,
+            timestamp: m.timestamp,
+            metadata: m.metadata
+          }));
+          this.conversations.set(projectId, list);
+          return list;
+        }
+      } catch (_) {}
+    }
+
+    return mem || [];
   }
 
   public async addMessage(
     projectId: string,
     role: 'user' | 'assistant' | 'system',
     content: string,
-    metadata?: { suggestedResponses?: string[]; stage?: 'idea' | 'requirements' | 'planning' | 'finalize' }
+    metadata?: { suggestedResponses?: string[]; stage?: 'idea' | 'requirements' | 'planning' | 'finalize'; isLiveAi?: boolean; model?: string }
   ): Promise<Message> {
     const list = this.conversations.get(projectId) || [];
     const newMessage: Message = {
@@ -290,6 +483,19 @@ class InMemoryStore {
     };
     list.push(newMessage);
     this.conversations.set(projectId, list);
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await ConversationModel.findOneAndUpdate(
+          { projectId },
+          { $push: { messages: newMessage } },
+          { upsert: true }
+        );
+      } catch (err: any) {
+        console.warn('[Store] MongoDB addMessage notice:', err.message);
+      }
+    }
+
     return newMessage;
   }
 
@@ -470,6 +676,16 @@ class InMemoryStore {
       version: '1.0.0-PROPOSAL',
       lastUpdated: project.updatedAt || new Date().toISOString()
     };
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        await BlueprintModel.findOneAndUpdate(
+          { projectId },
+          { blueprint: dynamicBlueprint, userId: project.userId },
+          { upsert: true }
+        );
+      } catch (_) {}
+    }
 
     return dynamicBlueprint;
   }

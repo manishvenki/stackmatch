@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Layers,
-  BookOpen,
+  FileText,
   Users,
   Settings,
   ChevronRight,
@@ -45,8 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'chat', label: 'AI Discussion Studio', icon: MessageSquare },
     { id: 'overview', label: 'Project Plan Overview', icon: Layers },
+    { id: 'projects', label: 'Saved Projects', icon: FolderKanban },
+    { id: 'blueprint', label: 'Blueprint', icon: FileText },
     { id: 'connect', label: 'Connect with Freelancers', icon: Users, isComingSoon: true },
-    { id: 'resources', label: 'Learning Resources', icon: BookOpen },
   ];
 
   const sidebarContent = (

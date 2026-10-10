@@ -13,6 +13,7 @@ import {
   Database,
   Server,
   Zap,
+  Share2,
 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { TechLogo } from '../brand/techLogos';
@@ -37,6 +38,7 @@ export interface DynamicBlueprintDocumentProps {
   risks?: ProjectRiskItem[];
   blueprint?: ProjectBlueprint | null;
   onOpenExportModal?: () => void;
+  onOpenShareModal?: () => void;
 }
 
 export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> = ({
@@ -49,6 +51,7 @@ export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> =
   risks = [],
   blueprint,
   onOpenExportModal,
+  onOpenShareModal,
 }) => {
   const version = blueprint?.version || '1.0.0-PROPOSAL';
   const generatedDate =
@@ -91,6 +94,16 @@ export const DynamicBlueprintDocument: React.FC<DynamicBlueprintDocumentProps> =
         </div>
 
         <div className="flex items-center gap-2">
+          {onOpenShareModal && (
+            <button
+              type="button"
+              onClick={onOpenShareModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D1D5DB] bg-white text-xs font-semibold text-[#374151] hover:bg-[#F9FAFB] transition-colors shadow-2xs"
+            >
+              <Share2 className="w-3.5 h-3.5 text-[#2563EB]" />
+              Share Blueprint
+            </button>
+          )}
           {onOpenExportModal && (
             <button
               type="button"

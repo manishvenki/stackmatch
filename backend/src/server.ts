@@ -7,7 +7,7 @@ const startServer = async () => {
 
   // Attempt database connection with graceful fallback
   try {
-    const mongoTimeoutMs = 1500;
+    const mongoTimeoutMs = 5000;
     await Promise.race([
       mongoose.connect(config.mongodbUri),
       new Promise((_, reject) =>

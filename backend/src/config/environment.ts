@@ -12,6 +12,9 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'stackmatch-super-secret-jwt-key-2026',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  aiProvider: process.env.AI_PROVIDER || 'openai',
-  aiApiKey: process.env.AI_API_KEY || '',
+  publicStackMatchUrl: process.env.PUBLIC_STACKMATCH_URL || 'https://stackmatch.dev',
+  aiProvider: process.env.AI_PROVIDER || 'gemini',
+  aiApiKey: process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
+  geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
 };

@@ -71,6 +71,7 @@ export interface ProjectOverviewPageProps {
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (project: Project) => void;
   onNavigateConnect?: () => void;
+  onOpenShareModal?: () => void;
 }
 
 export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
@@ -95,6 +96,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
   onEditProject,
   onDeleteProject,
   onNavigateConnect,
+  onOpenShareModal,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedTech, setSelectedTech] = useState<Technology>(
@@ -1000,6 +1002,7 @@ export const ProjectOverviewPage: React.FC<ProjectOverviewPageProps> = ({
               roadmapPhases={roadmapPhases}
               resources={resources}
               onOpenExportModal={() => setIsExportModalOpen(true)}
+              onOpenShareModal={onOpenShareModal}
             />
 
             {/* Contextual Connect with Freelancers Preview */}

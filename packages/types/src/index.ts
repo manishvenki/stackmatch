@@ -5,11 +5,26 @@ export type ProjectStatus = 'draft' | 'in-progress' | 'completed' | 'archived';
 export type RequirementType = 'functional' | 'non-functional';
 export type PriorityLevel = 'high' | 'medium' | 'low';
 
+export interface UserOnboardingData {
+  roles: string[];
+  technicalBackground: string;
+  experienceLevel: string;
+  projectInterests: string[];
+  customProjectInterest?: string;
+  familiarTechnologies: string[];
+  customTechnologies?: string;
+  goals: string[];
+  completedAt?: string;
+}
+
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role?: string;
+  onboardingCompleted?: boolean;
+  onboardingResponses?: UserOnboardingData;
   createdAt: string;
   updatedAt?: string;
 }

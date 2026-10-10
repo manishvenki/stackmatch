@@ -85,13 +85,28 @@ class ApiClient {
     return data;
   }
 
-  public async register(name: string, email: string, password: string): Promise<{ user: User; token: string }> {
+  public async register(
+    input: string | { name: string; username?: string; email: string; password: string; confirmPassword?: string },
+    email?: string,
+    password?: string
+  ): Promise<{ user: User; token: string }> {
+    const payload = typeof input === 'string'
+      ? { name: input, email, password }
+      : input;
     const data = await this.request<{ user: User; token: string }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password })
+      body: JSON.stringify(payload)
     });
     this.setToken(data.token);
     return data;
+  }
+
+  public async saveOnboarding(data: any): Promise<User> {
+    const res = await this.request<User>('/auth/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return res;
   }
 
   public async getMe(): Promise<User> {

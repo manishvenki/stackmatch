@@ -38,68 +38,38 @@ export const postMessage = async (req: Request, res: Response) => {
     const existingMessages = await store.getMessages(id);
     const projectName = project ? project.name : 'Project';
 
-    // Compile cumulative context
-    const fullPromptContext = existingMessages.map(m => m.content).join(' ');
-
-    // Invoke AI Planning Service
-    const analysis = await aiPlanningService.analyzeIdea(fullPromptContext, projectName);
-
-    let assistantResponseContent = '';
-    let stage: 'idea' | 'requirements' | 'planning' | 'finalize' = 'requirements';
-    let suggestedResponses: string[] = [];
-
-    const lower = content.toLowerCase();
-
-    // Contextual intelligent conversational branching
-    if (lower.includes('student') || lower.includes('restaurant') || lower.includes('admin') || lower.includes('user') || lower.includes('role')) {
-      stage = 'requirements';
-      assistantResponseContent = `Got it. Supporting ${analysis.targetUsers.join(', ')} requires clear role-based access control (RBAC) and dedicated portal views.
-
-For primary product delivery:
-1. Will your users access this via a web portal, native mobile app, or both?
-2. Do you require online payment collection (UPI, Cards), or will transactions be settled externally?`;
-      suggestedResponses = ['Both web and mobile', 'Online payments (UPI/Card)', 'Web only for MVP'];
-    } else if (lower.includes('mobile') || lower.includes('web') || lower.includes('payment') || lower.includes('online')) {
-      stage = 'planning';
-      assistantResponseContent = `Understood! Having ${analysis.platformRequirements.join(' and ')} with instant payment processing gives users maximum convenience.
-
-Based on this scope, I've outlined:
-• Functional Requirements (${analysis.targetUsers[0]} flows, Catalog, Checkout, and Operations)
-• Non-Functional Requirements (High concurrency spikes, Sub-500ms latency, Tokenized security)
-• Recommended Stack: React + React Native, Node.js API Gateway, and PostgreSQL for ACID transactional integrity.
-
-Would you like to generate the complete technical plan and review the architecture?`;
-      suggestedResponses = ['Generate Complete Plan', 'Explore Tech Stack', 'Review Architecture'];
-    } else if (lower.includes('generate') || lower.includes('complete plan') || lower.includes('architecture') || lower.includes('tech stack')) {
-      stage = 'finalize';
-      assistantResponseContent = `I have compiled your complete build-ready blueprint for "${projectName}":
-✓ Requirements & User Stories synthesized
-✓ Recommended Tech Stack with suitability scoring
-✓ 3-Tier System Architecture Diagram generated
-✓ 4-Phase Delivery Roadmap structured
-
-You can click "View Project Plan" above or the buttons below to explore the specifications.`;
-      suggestedResponses = ['View Project Plan', 'Inspect Requirements', 'Explore Tech Stack'];
-    } else {
-      stage = 'idea';
-      assistantResponseContent = `That's a great project direction. I've extracted the initial concept:
-• Problem: ${analysis.problemStatement}
-• Target Users: ${analysis.targetUsers.join(', ')}
-
-To refine the technology selection and architecture:
-1. What is the most critical core feature needed on day one?
-2. Which platform do you want to prioritize first (Web or Mobile)?`;
-      suggestedResponses = [
-        'Both web and mobile',
-        'Simple web MVP first',
-        'Mobile app first'
-      ];
+    // Retrieve user onboarding background if available
+    let onboarding = null;
+    if ((req as any).user?.id) {
+      const user = await store.findUserById((req as any).user.id);
+      if (user?.onboardingResponses) {
+        onboarding = user.onboardingResponses;
+      }
     }
+
+    // Call Google Gemini AI Service (with graceful development fallback)
+    const { geminiService } = await import('../services/geminiService');
+    const aiResult = await geminiService.generatePlanningChat(
+      content.trim(),
+      project,
+      existingMessages.map(m => ({ role: m.role, content: m.content })),
+      onboarding
+    );
+
+    const assistantResponseContent = aiResult.content;
+    const stage = aiResult.stage;
+    const suggestedResponses = aiResult.suggestedResponses;
+
+    // Also run structural idea analysis in background to keep project summary enriched
+    const fullPromptContext = existingMessages.map(m => m.content).join(' ') + ' ' + content;
+    const analysis = await aiPlanningService.analyzeIdea(fullPromptContext, projectName);
 
     // Save assistant message with metadata
     const assistantMsg = await store.addMessage(id, 'assistant', assistantResponseContent, {
       stage,
       suggestedResponses,
+      isLiveAi: aiResult.isLiveAi,
+      model: aiResult.model,
       followUpQuestion: analysis.followUpQuestions[0],
       analysisSummary: {
         problemStatement: analysis.problemStatement,

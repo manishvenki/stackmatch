@@ -256,6 +256,48 @@ const runTests = async () => {
     // Clean up rich project
     await request('DELETE', `/api/v1/projects/${richProjId}`);
 
+    // 23. Test duplicate email registration rejection
+    const duplicateRegRes = await request('POST', '/api/v1/auth/register', {
+      name: 'Duplicate Test',
+      email: registerRes.data?.data?.user?.email,
+      password: 'password123'
+    });
+    assert(duplicateRegRes.status === 409, 'POST /api/v1/auth/register rejects duplicate email with 409');
+
+    // 24. Test password mismatch rejection
+    const mismatchRegRes = await request('POST', '/api/v1/auth/register', {
+      name: 'Mismatch Test',
+      email: `mismatch_${Date.now()}@stackmatch.dev`,
+      password: 'password123',
+      confirmPassword: 'differentPassword456'
+    });
+    assert(mismatchRegRes.status === 400, 'POST /api/v1/auth/register rejects password mismatch with 400');
+
+    // 25. Test user onboarding preferences persistence
+    const onboardingRes = await request('POST', '/api/v1/auth/onboarding', {
+      roles: ['Developer', 'Founder or entrepreneur'],
+      technicalBackground: 'IT / Computer Science',
+      experienceLevel: 'Have built a few projects',
+      projectInterests: ['Web application', 'AI-powered product'],
+      familiarTechnologies: ['React', 'Node.js', 'PostgreSQL'],
+      goals: ['Startup or business', 'Career development']
+    }, authToken);
+    assert(
+      onboardingRes.status === 200 &&
+      onboardingRes.data?.data?.onboardingCompleted === true &&
+      Array.isArray(onboardingRes.data?.data?.onboardingResponses?.roles),
+      'POST /api/v1/auth/onboarding persists user onboarding stepper profile'
+    );
+
+    // 26. Verify GET /api/v1/auth/me returns persisted onboarding answers
+    const meWithOnboarding = await request('GET', '/api/v1/auth/me', null, authToken);
+    assert(
+      meWithOnboarding.status === 200 &&
+      meWithOnboarding.data?.data?.onboardingCompleted === true &&
+      meWithOnboarding.data?.data?.onboardingResponses?.experienceLevel === 'Have built a few projects',
+      'GET /api/v1/auth/me returns persisted onboarding status and background'
+    );
+
     console.log(`\nTests Completed: ${passed} passed, ${failed} failed`);
   } catch (err) {
     console.error('Test execution failed with error:', err);

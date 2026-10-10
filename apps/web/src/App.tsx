@@ -6,6 +6,13 @@ import { DiscussionPage } from './pages/DiscussionPage';
 import { ProjectOverviewPage } from './pages/ProjectOverviewPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ConnectFreelancersPage } from './pages/ConnectFreelancersPage';
+import { SignUpPage } from './pages/SignUpPage';
+import { SignInPage } from './pages/SignInPage';
+import { OnboardingStepperPage } from './pages/OnboardingStepperPage';
+import { WorkspaceSettingsPage } from './pages/WorkspaceSettingsPage';
+import { FeaturesPage } from './pages/FeaturesPage';
+import { HowItWorksPage } from './pages/HowItWorksPage';
+import { SocialShareModal } from './components/domain/SocialShareModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { ProjectModal } from './components/domain/ProjectModal';
 import { DeleteProjectModal } from './components/domain/DeleteProjectModal';
@@ -48,13 +55,11 @@ function AppContent() {
 
   // Navigation & View State
   const [currentView, setCurrentView] = useState<string>('landing');
-  const [currentUser, setCurrentUser] = useState<User | null>({
-    id: 'usr_demo_01',
-    name: 'Alex Rivera',
-    email: 'demo@stackmatch.dev',
-    role: 'founder',
-    createdAt: new Date().toISOString(),
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Social Sharing & Blueprint State
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [overviewInitialTab, setOverviewInitialTab] = useState<string>('overview');
 
   // Auth Modal State
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -97,47 +102,71 @@ function AppContent() {
   useEffect(() => {
     const initData = async () => {
       try {
+        let loggedUser: User | null = null;
         if (api.getToken()) {
           try {
             const me = await api.getMe();
-            if (me) setCurrentUser(me);
-          } catch (_) {}
+            if (me) {
+              loggedUser = me;
+              setCurrentUser(me);
+            }
+          } catch (_) {
+            api.logout();
+          }
         }
 
-        const fetchedProjects = await api.getProjects();
-        if (fetchedProjects && fetchedProjects.length > 0) {
-          setProjects(fetchedProjects);
-          const savedProjectId = localStorage.getItem('sm_last_active_project_id');
-          const targetProj = fetchedProjects.find((p) => p.id === savedProjectId) || fetchedProjects[0];
-          setActiveProject(targetProj);
-
-          const savedView = localStorage.getItem('sm_last_view');
-          if (savedView && ['dashboard', 'overview', 'chat', 'connect', 'resources'].includes(savedView)) {
-            setCurrentView(savedView);
+        if (loggedUser) {
+          if (!loggedUser.onboardingCompleted) {
+            setCurrentView('onboarding');
+            return;
           }
 
-          // Hydrate plan and conversation for active project
-          try {
-            const [plan, msgs] = await Promise.all([
-              api.getProjectPlan(targetProj.id).catch(() => null),
-              api.getMessages(targetProj.id).catch(() => []),
-            ]);
-            if (plan) {
-              if (plan.requirements?.length) setRequirements(plan.requirements);
-              const techs = plan.technologies || (plan as any).techStack;
-              if (techs?.length) setTechnologies(techs);
-              if (plan.comparisons) setComparisons(plan.comparisons);
-              if (plan.architecture?.length) setArchitecture(plan.architecture);
-              if (plan.roadmap?.length) setRoadmap(plan.roadmap);
-              if (plan.blueprint) setBlueprint(plan.blueprint);
-              if (plan.context) setProjectContext(plan.context);
-              if (plan.validation) setValidationReport(plan.validation);
-              if (plan.risks) setComplexityInsight(plan.risks);
+          const fetchedProjects = await api.getProjects();
+          if (fetchedProjects && fetchedProjects.length > 0) {
+            setProjects(fetchedProjects);
+            const savedProjectId = localStorage.getItem('sm_last_active_project_id');
+            const targetProj = fetchedProjects.find((p) => p.id === savedProjectId) || fetchedProjects[0];
+            setActiveProject(targetProj);
+
+            const savedView = localStorage.getItem('sm_last_view');
+            if (savedView && ['dashboard', 'overview', 'chat', 'connect', 'settings'].includes(savedView)) {
+              setCurrentView(savedView);
+            } else {
+              setCurrentView('dashboard');
             }
-            if (msgs && msgs.length > 0) {
-              setMessages(msgs);
-            }
-          } catch (_) {}
+
+            // Hydrate plan and conversation for active project
+            try {
+              const [plan, msgs] = await Promise.all([
+                api.getProjectPlan(targetProj.id).catch(() => null),
+                api.getMessages(targetProj.id).catch(() => []),
+              ]);
+              if (plan) {
+                if (plan.requirements?.length) setRequirements(plan.requirements);
+                const techs = plan.technologies || (plan as any).techStack;
+                if (techs?.length) setTechnologies(techs);
+                if (plan.comparisons) setComparisons(plan.comparisons);
+                if (plan.architecture?.length) setArchitecture(plan.architecture);
+                if (plan.roadmap?.length) setRoadmap(plan.roadmap);
+                if (plan.blueprint) setBlueprint(plan.blueprint);
+                if (plan.context) setProjectContext(plan.context);
+                if (plan.validation) setValidationReport(plan.validation);
+                if (plan.risks) setComplexityInsight(plan.risks);
+              }
+              if (msgs && msgs.length > 0) {
+                setMessages(msgs);
+              }
+            } catch (_) {}
+          } else {
+            setCurrentView('dashboard');
+          }
+        } else {
+          const savedView = localStorage.getItem('sm_last_view');
+          if (savedView && ['features', 'how-it-works'].includes(savedView)) {
+            setCurrentView(savedView);
+          } else {
+            setCurrentView('landing');
+          }
         }
       } catch (_) {
         // Fallback initialized
@@ -518,13 +547,110 @@ function AppContent() {
     });
   };
 
-  const navigateTo = (view: string) => {
-    const target = view === 'workspace' ? 'dashboard' : view;
-    setCurrentView(target);
-    localStorage.setItem('sm_last_view', target);
+  const handleAuthSuccess = async (user: User) => {
+    setCurrentUser(user);
+    if (!user.onboardingCompleted) {
+      setCurrentView('onboarding');
+      showToast({
+        type: 'info',
+        title: `Welcome, ${user.name}!`,
+        message: 'Please complete your onboarding profile to calibrate your workspace.',
+      });
+      return;
+    }
+    try {
+      const fetchedProjects = await api.getProjects();
+      if (fetchedProjects && fetchedProjects.length > 0) {
+        setProjects(fetchedProjects);
+        setActiveProject(fetchedProjects[0]);
+      } else {
+        setProjects([]);
+      }
+    } catch (_) {}
+    setCurrentView('dashboard');
+    showToast({
+      type: 'success',
+      title: 'Welcome Back',
+      message: `Signed in as ${user.name}.`,
+    });
   };
 
-  const isWorkspaceView = ['workspace', 'chat', 'overview', 'projects', 'dashboard', 'connect'].includes(currentView);
+  const handleOnboardingComplete = async (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+    showToast({
+      type: 'success',
+      title: 'Workspace Calibrated',
+      message: 'Your profile has been saved. Let\'s create your first project!',
+    });
+    handleOpenCreateProject();
+    setCurrentView('dashboard');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    api.logout();
+    setProjects([]);
+    setCurrentView('landing');
+    localStorage.removeItem('sm_last_view');
+    localStorage.removeItem('sm_last_active_project_id');
+    showToast({ type: 'info', title: 'Signed Out', message: 'You have been signed out securely.' });
+  };
+
+  const handleStartPlanning = () => {
+    if (!currentUser) {
+      setCurrentView('signup');
+    } else {
+      handleOpenCreateProject();
+    }
+  };
+
+  const navigateTo = (view: string) => {
+    if (view === 'workspace') {
+      if (!currentUser) {
+        setCurrentView('signin');
+      } else {
+        setCurrentView('dashboard');
+      }
+      return;
+    }
+    setCurrentView(view);
+    localStorage.setItem('sm_last_view', view);
+  };
+
+  const isWorkspaceView = Boolean(
+    currentUser && ['dashboard', 'chat', 'overview', 'blueprint', 'projects', 'connect', 'settings'].includes(currentView)
+  );
+
+  // Split-screen full-page auth & onboarding views (outside standard shell)
+  if (currentView === 'signin') {
+    return (
+      <SignInPage
+        onSuccess={handleAuthSuccess}
+        onNavigateSignUp={() => setCurrentView('signup')}
+        onNavigateHome={() => setCurrentView('landing')}
+      />
+    );
+  }
+
+  if (currentView === 'signup') {
+    return (
+      <SignUpPage
+        onSuccess={handleAuthSuccess}
+        onNavigateSignIn={() => setCurrentView('signin')}
+        onNavigateHome={() => setCurrentView('landing')}
+      />
+    );
+  }
+
+  if (currentView === 'onboarding') {
+    return (
+      <OnboardingStepperPage
+        currentUser={currentUser}
+        onComplete={handleOnboardingComplete}
+        onSkip={() => setCurrentView('dashboard')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFB] text-[#111827]">
@@ -536,15 +662,14 @@ function AppContent() {
         activeProjectName={activeProject?.name}
         onNavigate={navigateTo}
         onNewProject={handleOpenCreateProject}
-        onLogout={() => {
-          setCurrentUser(null);
-          api.logout();
-          showToast({ type: 'info', title: 'Signed Out', message: 'You have been signed out.' });
-        }}
+        onLogout={handleLogout}
         onToggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
         onOpenAuth={(mode) => {
-          setAuthModalMode(mode);
-          setAuthModalOpen(true);
+          if (mode === 'register') {
+            setCurrentView('signup');
+          } else {
+            setCurrentView('signin');
+          }
         }}
       />
 
@@ -556,22 +681,23 @@ function AppContent() {
             currentNav={currentView}
             onSelectNav={(nav) => {
               if (nav === 'dashboard' || nav === 'projects') navigateTo('dashboard');
-              else if (nav === 'overview') navigateTo('overview');
-              else if (nav === 'chat') navigateTo('chat');
+              else if (nav === 'blueprint') {
+                setOverviewInitialTab('blueprint');
+                navigateTo('blueprint');
+              } else if (nav === 'overview') {
+                setOverviewInitialTab('overview');
+                navigateTo('overview');
+              } else if (nav === 'chat') navigateTo('chat');
               else if (nav === 'connect') navigateTo('connect');
-              else if (nav === 'resources') navigateTo('resources');
+              else if (nav === 'settings') navigateTo('settings');
               else navigateTo(nav);
             }}
             onNewProject={handleOpenCreateProject}
             projects={projects}
-            activeProjectId={activeProject.id}
+            activeProjectId={activeProject?.id}
             onSelectProject={handleSelectProject}
             currentUser={currentUser}
-            onLogout={() => {
-              setCurrentUser(null);
-              api.logout();
-              showToast({ type: 'info', title: 'Signed Out', message: 'You have been signed out.' });
-            }}
+            onLogout={handleLogout}
             isOpenMobile={mobileSidebarOpen}
             onCloseMobile={() => setMobileSidebarOpen(false)}
           />
@@ -581,12 +707,37 @@ function AppContent() {
         <main className="flex-1 flex flex-col overflow-y-auto">
           {currentView === 'landing' && (
             <LandingPage
-              onStartPlanning={handleOpenCreateProject}
+              onStartPlanning={handleStartPlanning}
               onExploreProject={(id) => {
                 handleSelectProject(id);
                 setCurrentView('overview');
               }}
+              onExploreHowItWorks={() => setCurrentView('how-it-works')}
               onExploreConnect={() => setCurrentView('connect')}
+            />
+          )}
+
+          {currentView === 'features' && (
+            <FeaturesPage
+              onStartPlanning={handleStartPlanning}
+              onNavigateHome={() => setCurrentView('landing')}
+              onNavigateHowItWorks={() => setCurrentView('how-it-works')}
+            />
+          )}
+
+          {currentView === 'how-it-works' && (
+            <HowItWorksPage
+              onStartPlanning={handleStartPlanning}
+              onNavigateHome={() => setCurrentView('landing')}
+              onNavigateFeatures={() => setCurrentView('features')}
+            />
+          )}
+
+          {currentView === 'settings' && (
+            <WorkspaceSettingsPage
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onRestartOnboarding={() => setCurrentView('onboarding')}
             />
           )}
 
@@ -621,14 +772,17 @@ function AppContent() {
               messages={messages}
               onSendMessage={handleSendMessage}
               isLoading={isAiLoading}
-              onViewProjectPlan={() => setCurrentView('overview')}
+              onViewProjectPlan={() => {
+                setOverviewInitialTab('overview');
+                setCurrentView('overview');
+              }}
               onGeneratePlan={handleGeneratePlan}
               isGeneratingPlan={isGeneratingPlan}
               onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
             />
           )}
 
-          {currentView === 'overview' && (
+          {(currentView === 'overview' || currentView === 'blueprint') && (
             <ProjectOverviewPage
               project={activeProject}
               projectContext={projectContext}
@@ -643,6 +797,7 @@ function AppContent() {
               roadmapPhases={roadmap}
               resources={resources}
               blueprint={blueprint}
+              initialTab={currentView === 'blueprint' ? 'blueprint' : overviewInitialTab}
               onOpenChat={() => setCurrentView('chat')}
               onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
               onUpdateRequirement={handleUpdateRequirement}
@@ -651,63 +806,8 @@ function AppContent() {
               onEditProject={handleOpenEditProject}
               onDeleteProject={handleOpenDeleteProject}
               onNavigateConnect={() => setCurrentView('connect')}
+              onOpenShareModal={() => setShareModalOpen(true)}
             />
-          )}
-
-          {currentView === 'resources' && (
-            <div className="p-8 max-w-6xl mx-auto space-y-6">
-              <div className="border-b border-[#E5E7EB] pb-4">
-                <h2 className="text-2xl font-bold text-[#111827]">Learning Resources</h2>
-                <p className="text-xs text-[#687280] mt-1">
-                  Official engineering documentation and verified implementation guides.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {resources.map((res) => (
-                  <div key={res.id} className="bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-subtle flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] font-semibold text-[#687280] bg-[#F3F4F6] px-2 py-0.5 rounded">
-                        {res.category}
-                      </span>
-                      <h4 className="text-sm font-bold text-[#111827] mt-2">{res.title}</h4>
-                      <p className="text-xs text-[#687280] mt-1 leading-relaxed">{res.description}</p>
-                    </div>
-                    <a
-                      href={res.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-block mt-4 text-xs font-semibold text-[#2563EB] hover:underline"
-                    >
-                      Read Documentation →
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {(currentView === 'features' || currentView === 'how-it-works') && (
-            <div className="p-8 max-w-5xl mx-auto space-y-6">
-              <div className="border-b border-[#E5E7EB] pb-4">
-                <h2 className="text-2xl font-bold text-[#111827] capitalize">
-                  {currentView.replace('-', ' ')}
-                </h2>
-                <p className="text-xs text-[#687280] mt-1">
-                  StackMatch Platform Guidance & Specifications
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-4 text-xs text-[#374151]">
-                <p>
-                  StackMatch helps technical and non-technical people turn a simple product idea into a structured, understandable, build-ready project plan.
-                </p>
-                <div className="p-4 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <span className="font-bold text-[#111827] block mb-1">Central Planning Philosophy:</span>
-                  Idea → Discussion → Requirements → Features → Technology Stack → Architecture → Roadmap → Blueprint.
-                </div>
-              </div>
-            </div>
           )}
         </main>
       </div>
@@ -728,20 +828,20 @@ function AppContent() {
         onConfirm={handleConfirmDelete}
       />
 
-      {/* Auth Modal */}
+      {/* Auth Modal (as supplemental dialog if triggered directly) */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
-        onAuthSuccess={(user) => {
-          setCurrentUser(user);
-          setCurrentView('dashboard');
-          showToast({
-            type: 'success',
-            title: 'Welcome Back',
-            message: `Signed in as ${user.name}.`,
-          });
-        }}
+        onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        project={activeProject}
+        blueprint={blueprint}
       />
     </div>
   );

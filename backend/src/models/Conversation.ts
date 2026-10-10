@@ -13,6 +13,7 @@ export interface IMessageSubdocument {
 
 export interface IConversationDocument extends Document {
   projectId: string;
+  userId?: string;
   messages: IMessageSubdocument[];
   createdAt: Date;
   updatedAt: Date;
@@ -35,9 +36,10 @@ const MessageSchema = new Schema<IMessageSubdocument>(
 const ConversationSchema = new Schema<IConversationDocument>(
   {
     projectId: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, index: true },
     messages: [MessageSchema],
   },
   { timestamps: true }
 );
 
-export const ConversationModel = mongoose.model<IConversationDocument>('Conversation', ConversationSchema);
+export const ConversationModel = mongoose.models.Conversation || mongoose.model<IConversationDocument>('Conversation', ConversationSchema);
