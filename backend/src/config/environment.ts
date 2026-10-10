@@ -1,9 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load root or local .env
+// Load root or local .env with multi-level resilience
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
@@ -16,5 +18,5 @@ export const config = {
   aiProvider: process.env.AI_PROVIDER || 'gemini',
   aiApiKey: process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
   geminiApiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
 };

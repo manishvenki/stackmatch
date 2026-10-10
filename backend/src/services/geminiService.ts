@@ -15,7 +15,20 @@ export class GeminiService {
 
   constructor() {
     this.apiKey = config.geminiApiKey || config.aiApiKey;
-    this.model = config.geminiModel || 'gemini-1.5-flash';
+    this.model = this.normalizeModel(config.geminiModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash');
+  }
+
+  /**
+   * Normalizes model identifiers and maps retired models to active Google models.
+   */
+  public normalizeModel(rawModel?: string): string {
+    const val = (rawModel || 'gemini-3.8-flash').trim();
+    const clean = val.startsWith('models/') ? val.replace('models/', '') : val;
+    // Map retired/deprecated models to Google's current stable planning model
+    if (clean === 'gemini-1.5-flash' || clean === 'gemini-1.5-pro' || clean === 'gemini-2.5-flash') {
+      return 'gemini-3.8-flash';
+    }
+    return clean;
   }
 
   /**
@@ -28,6 +41,7 @@ export class GeminiService {
     onboarding?: UserOnboardingData | null
   ): Promise<GeminiPlanningResponse> {
     const activeKey = this.apiKey || config.geminiApiKey || config.aiApiKey;
+    let targetModel = this.normalizeModel(config.geminiModel || process.env.GEMINI_MODEL || this.model);
 
     // Build system framing and project context
     const projectName = project?.name || 'New Project';
@@ -71,8 +85,6 @@ Guidelines:
     }
 
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${activeKey}`;
-
       // Format conversation contents for Gemini
       const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [
         {
@@ -100,39 +112,59 @@ Guidelines:
         parts: [{ text: userMessage }]
       });
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const executeRequest = async (modelName: string) => {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeKey}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-            topP: 0.95
-          }
-        }),
-        signal: controller.signal
-      });
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents,
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+                topP: 0.95
+              }
+            }),
+            signal: controller.signal
+          });
+          return res;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
 
-      clearTimeout(timeoutId);
+      let response = await executeRequest(targetModel);
+
+      // Automatic recovery: if configured model returns 404, fallback once to gemini-3.8-flash
+      if (response.status === 404 && targetModel !== 'gemini-3.8-flash') {
+        console.warn(`[GeminiService] Model "${targetModel}" returned 404. Attempting recovery with gemini-3.8-flash...`);
+        targetModel = 'gemini-3.8-flash';
+        response = await executeRequest(targetModel);
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const statusMsg = response.status === 400 || response.status === 403
-          ? 'Invalid or unauthorized Google AI API key.'
-          : response.status === 429
-          ? 'Google AI API quota limit reached. Please check your AI Studio quota.'
-          : `Google AI API responded with status ${response.status}.`;
-        
-        console.warn(`[GeminiService] API error: ${statusMsg}`, errorData);
+        let statusMsg = '';
+        if (response.status === 400 || response.status === 403) {
+          statusMsg = 'Invalid or unauthorized Google AI API key. Please check your credentials in Google AI Studio.';
+        } else if (response.status === 404) {
+          statusMsg = `Google AI model "${targetModel}" is not available or not supported on this endpoint (HTTP 404).`;
+        } else if (response.status === 429) {
+          statusMsg = 'Google AI API quota limit reached. Please check your AI Studio quota and rate limits.';
+        } else {
+          statusMsg = `Google AI API responded with status ${response.status} (${response.statusText}).`;
+        }
+
+        console.warn(`[GeminiService] API error: ${statusMsg}`, errorData?.error?.message || '');
         const fallback = this.generateDevelopmentFallback(userMessage, project);
         return {
           content: `[Notice: ${statusMsg} Falling back to internal engine]\n\n${fallback.content}`,
           isLiveAi: false,
-          model: 'gemini-fallback',
+          model: targetModel,
           stage: fallback.stage,
           suggestedResponses: fallback.suggestedResponses,
         };
@@ -163,7 +195,7 @@ Guidelines:
       return {
         content: candidateText,
         isLiveAi: true,
-        model: this.model,
+        model: targetModel,
         stage,
         suggestedResponses,
       };
