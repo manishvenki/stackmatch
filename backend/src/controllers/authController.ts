@@ -172,9 +172,9 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
 
     const user = await store.findUserById(req.user.id);
     if (!user) {
-      return res.status(404).json({
+      return res.status(401).json({
         success: false,
-        error: 'User not found'
+        error: 'Session expired or user not found'
       });
     }
 
