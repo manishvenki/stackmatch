@@ -200,36 +200,62 @@ class InMemoryStore {
 
   // Project methods
   public async getProjects(userId?: string): Promise<Project[]> {
-    if (userId) {
-      if (mongoose.connection.readyState === 1) {
-        try {
-          const docs = await ProjectModel.find({ userId });
-          for (const doc of docs) {
-            if (!this.projects.has(doc.id)) {
-              this.projects.set(doc.id, {
-                id: doc.id,
-                userId: doc.userId,
-                name: doc.name,
-                description: doc.description,
-                category: doc.category,
-                problemStatement: doc.problemStatement,
-                status: doc.status,
-                currentStage: doc.currentStage,
-                summary: doc.summary as any,
-                createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
-                updatedAt: doc.updatedAt?.toISOString() || new Date().toISOString()
-              });
-            }
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const query = userId ? { userId } : {};
+        const docs = await ProjectModel.find(query);
+        for (const doc of docs) {
+          if (!this.projects.has(doc.id)) {
+            this.projects.set(doc.id, {
+              id: doc.id,
+              userId: doc.userId,
+              name: doc.name,
+              description: doc.description,
+              category: doc.category,
+              problemStatement: doc.problemStatement,
+              status: doc.status as any,
+              currentStage: doc.currentStage as any,
+              summary: doc.summary as any,
+              createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+              updatedAt: doc.updatedAt?.toISOString() || new Date().toISOString()
+            });
           }
-        } catch (_) {}
-      }
+        }
+      } catch (_) {}
+    }
+    if (userId) {
       return Array.from(this.projects.values()).filter((p) => p.userId === userId || (p.userId === 'usr_demo_01' && userId === 'usr_demo_01'));
     }
     return Array.from(this.projects.values());
   }
 
   public async getProjectById(id: string): Promise<Project | null> {
-    return this.projects.get(id) || null;
+    if (this.projects.has(id)) {
+      return this.projects.get(id) || null;
+    }
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const doc = await ProjectModel.findOne({ id });
+        if (doc) {
+          const proj: Project = {
+            id: doc.id,
+            userId: doc.userId,
+            name: doc.name,
+            description: doc.description,
+            category: doc.category,
+            problemStatement: doc.problemStatement,
+            status: doc.status as any,
+            currentStage: doc.currentStage as any,
+            summary: doc.summary as any,
+            createdAt: doc.createdAt?.toISOString() || new Date().toISOString(),
+            updatedAt: doc.updatedAt?.toISOString() || new Date().toISOString()
+          };
+          this.projects.set(id, proj);
+          return proj;
+        }
+      } catch (_) {}
+    }
+    return null;
   }
 
   public async createProject(
@@ -585,7 +611,7 @@ class InMemoryStore {
   }
 
   public async getBlueprint(projectId: string): Promise<ProjectBlueprint | null> {
-    const project = this.projects.get(projectId);
+    const project = await this.getProjectById(projectId);
     if (!project) return null;
 
     const reqs = this.requirements.get(projectId) || [];

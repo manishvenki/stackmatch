@@ -5,23 +5,34 @@ import { config } from './config/environment';
 const startServer = async () => {
   const app = createApp();
 
-  // Attempt database connection with graceful fallback
+  // Attempt database connection to MongoDB Atlas
   try {
-    const mongoTimeoutMs = 5000;
-    await Promise.race([
-      mongoose.connect(config.mongodbUri),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out')), mongoTimeoutMs)
-      )
-    ]);
-    console.log(`[Database] Connected to MongoDB at ${config.mongodbUri}`);
+    if (!config.mongodbUri) {
+      throw new Error('MONGODB_URI is not configured');
+    }
+    await mongoose.connect(config.mongodbUri, {
+      serverSelectionTimeoutMS: 15000,
+      dbName: 'stackmatch',
+    });
+    const maskedHost = mongoose.connection.host || 'MongoDB Atlas Cluster';
+    const dbName = mongoose.connection.name || 'stackmatch';
+    console.log(`[Database] Successfully connected to MongoDB Atlas (Cluster: ${maskedHost}, Database: ${dbName})`);
   } catch (err: any) {
-    console.warn(`[Database] MongoDB not reachable (${err.message}). Using synchronized persistence engine.`);
+    console.warn(`[Database] MongoDB Atlas connection notice (${err.message}). Using synchronized persistence engine.`);
   }
 
   const server = app.listen(config.port, () => {
     console.log(`[StackMatch Server] Running at http://localhost:${config.port}`);
     console.log(`[StackMatch Server] Health check: http://localhost:${config.port}/api/v1/health`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[StackMatch Server] Port ${config.port} is already in use by another instance.`);
+      process.exit(1);
+    } else {
+      console.error('[StackMatch Server] Server error:', err);
+    }
   });
 
   const shutdown = async () => {
