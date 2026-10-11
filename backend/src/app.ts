@@ -32,6 +32,15 @@ const ensureDatabaseConnected = async (): Promise<void> => {
 export const createApp = (): Express => {
   const app = express();
 
+  // Normalize rewritten Vercel internal paths to preserve the real requested route
+  app.use((req, res, next) => {
+    const matchedPath = (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.headers['x-forwarded-uri']) as string;
+    if (matchedPath && (req.url.startsWith('/backend/src/app') || req.url.startsWith('/src/app'))) {
+      req.url = matchedPath;
+    }
+    next();
+  });
+
   // Lazy database connection middleware for serverless invocations
   app.use(async (req, res, next) => {
     try {
@@ -40,25 +49,59 @@ export const createApp = (): Express => {
     next();
   });
 
-  // Middleware
-  app.use(cors({
+  // Production CORS Configuration
+  const allowedOrigins = [
+    'https://stackmatch-si37.vercel.app',
+    'https://stackmatch.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    ...(config.clientUrl ? [config.clientUrl] : [])
+  ];
+
+  const isOriginAllowed = (origin: string): boolean => {
+    if (allowedOrigins.includes(origin)) {
+      return true;
+    }
+    // Allow Vercel preview deployments for StackMatch
+    if (
+      origin.startsWith('https://stackmatch-') &&
+      origin.endsWith('.vercel.app')
+    ) {
+      return true;
+    }
+    // Allow localhost with any port in local development
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) {
+      return true;
+    }
+    return false;
+  };
+
+  const corsOptions: cors.CorsOptions = {
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or Postman)
-      if (!origin) return callback(null, true);
-      // Allow localhost or configured client URL or any vercel preview URL
-      if (
-        origin.startsWith('http://localhost') ||
-        origin === config.clientUrl ||
-        origin.endsWith('.vercel.app')
-      ) {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server, or Postman)
+      if (!origin) {
         return callback(null, true);
       }
-      return callback(null, true); // Dev-friendly
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  }));
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400,
+    optionsSuccessStatus: 204
+  };
+
+  // CORS middleware before any API routes
+  app.use(cors(corsOptions));
+  // Explicitly handle OPTIONS preflight requests for all endpoints
+  app.options('*', cors(corsOptions));
 
   app.use(express.json({ limit: '5mb' }));
   app.use(express.urlencoded({ extended: true }));
