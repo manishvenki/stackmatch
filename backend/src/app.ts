@@ -1,20 +1,56 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes';
 import projectRoutes from './routes/projectRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { config } from './config/environment';
 
-export const createApp = () => {
+// Cached database connection promise for serverless environments (e.g. Vercel)
+let dbConnectionPromise: Promise<typeof mongoose> | null = null;
+
+const ensureDatabaseConnected = async (): Promise<void> => {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (!config.mongodbUri) {
+    return;
+  }
+  if (!dbConnectionPromise) {
+    dbConnectionPromise = mongoose.connect(config.mongodbUri, {
+      serverSelectionTimeoutMS: 8000,
+      dbName: 'stackmatch',
+    }).catch((err: any) => {
+      dbConnectionPromise = null;
+      console.warn(`[Database] MongoDB Atlas connection notice (${err.message})`);
+      return mongoose;
+    });
+  }
+  await dbConnectionPromise;
+};
+
+export const createApp = (): Express => {
   const app = express();
+
+  // Lazy database connection middleware for serverless invocations
+  app.use(async (req, res, next) => {
+    try {
+      await ensureDatabaseConnected();
+    } catch (_) {}
+    next();
+  });
 
   // Middleware
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or Postman)
       if (!origin) return callback(null, true);
-      // Allow localhost or configured client URL
-      if (origin.startsWith('http://localhost') || origin === config.clientUrl) {
+      // Allow localhost or configured client URL or any vercel preview URL
+      if (
+        origin.startsWith('http://localhost') ||
+        origin === config.clientUrl ||
+        origin.endsWith('.vercel.app')
+      ) {
         return callback(null, true);
       }
       return callback(null, true); // Dev-friendly
@@ -40,6 +76,22 @@ export const createApp = () => {
       next();
     });
   }
+
+  // Root route for deployment verification
+  app.get('/', (req, res) => {
+    res.json({
+      service: 'StackMatch Backend API',
+      status: 'online',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        health: '/health',
+        apiHealth: '/api/v1/health',
+        auth: '/api/v1/auth',
+        projects: '/api/v1/projects'
+      }
+    });
+  });
 
   // Health checks
   app.get('/health', (req, res) => {
@@ -76,3 +128,18 @@ export const createApp = () => {
 
   return app;
 };
+
+// Instantiate singleton Express application for serverless invocation
+const app = createApp();
+
+// Dual export for ES module and CommonJS compatibility with Vercel and local runners
+export { app };
+export default app;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = app;
+  (module.exports as any).default = app;
+  (module.exports as any).app = app;
+  (module.exports as any).createApp = createApp;
+}
+
