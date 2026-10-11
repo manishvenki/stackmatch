@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/backend/src/app.ts"
+      "destination": "/backend/src/app.ts?__route=/$1"
     }
   ]
 }

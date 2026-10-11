@@ -16,7 +16,19 @@ import {
 
 import { mapError, AppError } from './errorMapper';
 
-const API_BASE = ((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api/v1';
+const getApiBase = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL as string;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  // Fallback to production backend on remote Vercel deployments
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://stackmatch-six.vercel.app/api/v1';
+  }
+  return '/api/v1';
+};
+
+const API_BASE = getApiBase();
 
 class ApiClient {
   private token: string | null = null;

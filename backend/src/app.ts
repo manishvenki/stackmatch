@@ -34,8 +34,23 @@ export const createApp = (): Express => {
 
   // Normalize rewritten Vercel internal paths to preserve the real requested route
   app.use((req, res, next) => {
+    let routeParam = req.query.__route as string | undefined;
     const matchedPath = (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.headers['x-forwarded-uri']) as string;
-    if (matchedPath && (req.url.startsWith('/backend/src/app') || req.url.startsWith('/src/app'))) {
+
+    if (routeParam !== undefined) {
+      delete req.query.__route;
+      if (!routeParam || routeParam === '' || routeParam === '/') {
+        routeParam = '/';
+      } else if (!routeParam.startsWith('/')) {
+        routeParam = '/' + routeParam;
+      }
+      const params = new URLSearchParams();
+      for (const [key, val] of Object.entries(req.query)) {
+        if (typeof val === 'string') params.append(key, val);
+      }
+      const qs = params.toString();
+      req.url = qs ? `${routeParam}?${qs}` : routeParam;
+    } else if (matchedPath && (req.url.startsWith('/backend/src/app') || req.url.startsWith('/src/app'))) {
       req.url = matchedPath;
     }
     next();
@@ -51,7 +66,9 @@ export const createApp = (): Express => {
 
   // Production CORS Configuration
   const allowedOrigins = [
+    'https://stackmatch-si37-jeb7mtz42-its2muchprojects.vercel.app',
     'https://stackmatch-si37.vercel.app',
+    'https://stackmatch-six.vercel.app',
     'https://stackmatch.vercel.app',
     'http://localhost:5173',
     'http://localhost:5174',
