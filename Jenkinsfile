@@ -10,7 +10,7 @@ pipeline {
     environment {
         CI = 'true'
         NODE_ENV = 'test'
-        DOCKERHUB_NAMESPACE = 'manishvenkhi'
+        DOCKERHUB_NAMESPACE = 'manishvenki'
     }
 
     stages {
