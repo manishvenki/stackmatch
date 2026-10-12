@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 45, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '15'))
         timestamps()
     }
@@ -10,28 +10,33 @@ pipeline {
     environment {
         CI = 'true'
         NODE_ENV = 'test'
+        DOCKERHUB_NAMESPACE = 'manishvenkhi'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out source code from Git repository...'
+                echo 'Checking out StackMatch source code...'
                 checkout scm
             }
         }
 
         stage('Verify Environment') {
             steps {
-                echo 'Checking Node.js, npm, and Git versions on Jenkins agent...'
+                echo 'Checking Node.js, npm, Git, and Docker...'
                 script {
                     if (isUnix()) {
                         sh 'node --version'
                         sh 'npm --version'
                         sh 'git --version'
+                        sh 'docker --version'
+                        sh 'docker compose version'
                     } else {
                         bat 'node --version'
                         bat 'npm --version'
                         bat 'git --version'
+                        bat 'docker --version'
+                        bat 'docker compose version'
                     }
                 }
             }
@@ -39,7 +44,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing workspace dependencies reproducibly across packages...'
+                echo 'Installing workspace dependencies...'
                 script {
                     if (isUnix()) {
                         sh 'npm --prefix packages/types ci || npm --prefix packages/types install'
@@ -56,7 +61,7 @@ pipeline {
 
         stage('Build Shared Types') {
             steps {
-                echo 'Compiling shared types package (@stackmatch/types)...'
+                echo 'Building @stackmatch/types...'
                 script {
                     if (isUnix()) {
                         sh 'npm --prefix packages/types run build'
@@ -69,7 +74,7 @@ pipeline {
 
         stage('Test Backend & Error Handling') {
             steps {
-                echo 'Executing StackMatch Backend API & Domain Separation Tests...'
+                echo 'Running backend tests...'
                 script {
                     if (isUnix()) {
                         sh 'npm --prefix backend test'
@@ -82,7 +87,7 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                echo 'Compiling Backend TypeScript (@stackmatch/backend)...'
+                echo 'Building backend...'
                 script {
                     if (isUnix()) {
                         sh 'npm --prefix backend run build'
@@ -95,7 +100,7 @@ pipeline {
 
         stage('Build Web Frontend') {
             steps {
-                echo 'Building Web Frontend production bundle (@stackmatch/web)...'
+                echo 'Building frontend...'
                 script {
                     if (isUnix()) {
                         sh 'npm --prefix apps/web run build'
@@ -108,14 +113,97 @@ pipeline {
 
         stage('Validate Docker Build') {
             steps {
-                echo 'Validating Docker Compose configuration and container builds...'
+                echo 'Validating Compose configuration and building images...'
                 script {
                     if (isUnix()) {
-                        sh 'docker compose config'
+                        sh 'docker compose config -q'
                         sh 'docker compose build'
                     } else {
-                        bat 'docker compose config'
+                        bat 'docker compose config -q'
                         bat 'docker compose build'
+                    }
+                }
+            }
+        }
+
+        stage('Publish Docker Images') {
+            when {
+                branch 'main'
+            }
+
+            steps {
+                script {
+                    def imageTag = env.GIT_COMMIT.take(12)
+
+                    def backendImage =
+                        "${env.DOCKERHUB_NAMESPACE}/stackmatch-backend"
+                    def frontendImage =
+                        "${env.DOCKERHUB_NAMESPACE}/stackmatch-frontend"
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'dockerhub-creds',
+                            usernameVariable: 'DOCKERHUB_USERNAME',
+                            passwordVariable: 'DOCKERHUB_TOKEN'
+                        )
+                    ]) {
+                        try {
+                            if (isUnix()) {
+                                sh '''
+                                    set +x
+                                    printf '%s' "$DOCKERHUB_TOKEN" |
+                                        docker login \
+                                        --username "$DOCKERHUB_USERNAME" \
+                                        --password-stdin
+                                '''
+                            } else {
+                                bat '''
+                                    @echo off
+                                    setlocal
+                                    <nul set /p "=%DOCKERHUB_TOKEN%" | docker login --username "%DOCKERHUB_USERNAME%" --password-stdin
+                                    exit /b %ERRORLEVEL%
+                                '''
+                            }
+
+                            if (isUnix()) {
+                                sh """
+                                    docker tag ${backendImage}:latest ${backendImage}:${imageTag}
+                                    docker tag ${frontendImage}:latest ${frontendImage}:${imageTag}
+
+                                    docker push ${backendImage}:latest
+                                    docker push ${backendImage}:${imageTag}
+
+                                    docker push ${frontendImage}:latest
+                                    docker push ${frontendImage}:${imageTag}
+                                """
+                            } else {
+                                bat """
+                                    docker tag ${backendImage}:latest ${backendImage}:${imageTag}
+                                    if errorlevel 1 exit /b 1
+
+                                    docker tag ${frontendImage}:latest ${frontendImage}:${imageTag}
+                                    if errorlevel 1 exit /b 1
+
+                                    docker push ${backendImage}:latest
+                                    if errorlevel 1 exit /b 1
+
+                                    docker push ${backendImage}:${imageTag}
+                                    if errorlevel 1 exit /b 1
+
+                                    docker push ${frontendImage}:latest
+                                    if errorlevel 1 exit /b 1
+
+                                    docker push ${frontendImage}:${imageTag}
+                                    if errorlevel 1 exit /b 1
+                                """
+                            }
+                        } finally {
+                            if (isUnix()) {
+                                sh 'docker logout || true'
+                            } else {
+                                bat 'docker logout'
+                            }
+                        }
                     }
                 }
             }
@@ -124,13 +212,15 @@ pipeline {
 
     post {
         always {
-            echo 'StackMatch CI Pipeline execution completed.'
+            echo 'StackMatch CI pipeline execution completed.'
         }
+
         success {
-            echo 'StackMatch CI Pipeline passed successfully: All builds and tests verified.'
+            echo 'StackMatch CI pipeline completed successfully.'
         }
+
         failure {
-            echo 'StackMatch CI Pipeline failed. Review the console logs of the failing stage.'
+            echo 'StackMatch CI pipeline failed. Review the console output.'
         }
     }
 }

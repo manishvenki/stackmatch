@@ -1,5 +1,6 @@
 services:
   backend:
+    image: manishvenkhi/stackmatch-backend:latest
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -8,16 +9,16 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - PORT=5000
-      - NODE_ENV=production
-      - MONGODB_URI=${MONGODB_URI}
-      - JWT_SECRET=${JWT_SECRET:-stackmatch-super-secret-jwt-key-2026}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
-      - AI_PROVIDER=${AI_PROVIDER:-gemini}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
-      - PUBLIC_STACKMATCH_URL=${PUBLIC_STACKMATCH_URL:-http://localhost:3000}
+      PORT: "5000"
+      NODE_ENV: production
+      MONGODB_URI: ${MONGODB_URI:?MONGODB_URI must be set}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      PUBLIC_STACKMATCH_URL: ${PUBLIC_STACKMATCH_URL:-http://localhost:3000}
     networks:
       - stackmatch-network
     healthcheck:
@@ -28,6 +29,7 @@ services:
       start_period: 10s
 
   frontend:
+    image: manishvenkhi/stackmatch-frontend:latest
     build:
       context: .
       dockerfile: apps/web/Dockerfile
