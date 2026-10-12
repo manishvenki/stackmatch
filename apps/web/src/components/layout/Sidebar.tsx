@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   FolderKanban,
   X,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { User, Project } from '../../types';
@@ -47,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'overview', label: 'Project Plan Overview', icon: Layers },
     { id: 'projects', label: 'Saved Projects', icon: FolderKanban },
     { id: 'blueprint', label: 'Blueprint', icon: FileText },
+    { id: 'resources', label: 'Developer Resources', icon: BookOpen },
     { id: 'connect', label: 'Connect with Freelancers', icon: Users, isComingSoon: true },
   ];
 

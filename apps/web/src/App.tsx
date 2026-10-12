@@ -12,6 +12,7 @@ import { OnboardingStepperPage } from './pages/OnboardingStepperPage';
 import { WorkspaceSettingsPage } from './pages/WorkspaceSettingsPage';
 import { FeaturesPage } from './pages/FeaturesPage';
 import { HowItWorksPage } from './pages/HowItWorksPage';
+import { ResourcesPage } from './pages/ResourcesPage';
 import { SocialShareModal } from './components/domain/SocialShareModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { ProjectModal } from './components/domain/ProjectModal';
@@ -838,6 +839,13 @@ function AppContent() {
               onStartPlanning={handleStartPlanning}
               onNavigateHome={() => setCurrentView('landing')}
               onNavigateFeatures={() => setCurrentView('features')}
+            />
+          )}
+
+          {currentView === 'resources' && (
+            <ResourcesPage
+              onStartPlanning={handleStartPlanning}
+              onNavigateHome={() => setCurrentView('landing')}
             />
           )}
 
