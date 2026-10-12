@@ -180,7 +180,18 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
           {error && (
             <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] flex items-start gap-2.5 text-xs text-[#DC2626] animate-in fade-in duration-150">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1 leading-relaxed">{error}</div>
+              <div className="flex-1 leading-relaxed">
+                <span>{error}</span>
+                {error.toLowerCase().includes('already exist') && (
+                  <button
+                    type="button"
+                    onClick={onNavigateSignIn}
+                    className="block mt-1.5 font-bold text-[#2563EB] hover:underline cursor-pointer"
+                  >
+                    Click here to sign in to your existing account →
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -195,7 +206,10 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="e.g. Maya Chen"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
               />
@@ -209,7 +223,10 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="e.g. mayachen"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
               />
@@ -224,7 +241,10 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="name@company.com"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
               />
@@ -240,7 +260,10 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="At least 6 characters"
                   className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
                 />

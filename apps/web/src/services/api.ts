@@ -83,11 +83,17 @@ class ApiClient {
         const errorMsg = json.error || `HTTP error ${res.status}`;
         const errObj = {
           message: errorMsg,
+          code: json.code,
           statusCode: res.status,
           status: res.status,
           data: json
         };
-        const errorContext = context || (endpoint.includes('messages') ? 'ai-chat' : endpoint);
+        const defaultContext =
+          endpoint.startsWith('/auth') ? 'auth' :
+          endpoint.includes('messages') ? 'ai-chat' :
+          endpoint.includes('analyze-idea') || endpoint.includes('generate-plan') ? 'ai-planning' :
+          endpoint;
+        const errorContext = context || defaultContext;
         throw mapError(errObj, errorContext);
       }
 
@@ -97,7 +103,12 @@ class ApiClient {
       if (err instanceof AppError) {
         throw err;
       }
-      const errorContext = context || (endpoint.includes('messages') ? 'ai-chat' : endpoint);
+      const defaultContext =
+        endpoint.startsWith('/auth') ? 'auth' :
+        endpoint.includes('messages') ? 'ai-chat' :
+        endpoint.includes('analyze-idea') || endpoint.includes('generate-plan') ? 'ai-planning' :
+        endpoint;
+      const errorContext = context || defaultContext;
       if (err.name === 'AbortError') {
         throw mapError(new Error('Request timed out. Please check your connection and try again.'), errorContext);
       }
@@ -107,11 +118,15 @@ class ApiClient {
   }
 
   // Auth
-  public async login(email: string, password: string):Promise<{ user: User; token: string }> {
-    const data = await this.request<{ user: User; token: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
+  public async login(email: string, password: string): Promise<{ user: User; token: string }> {
+    const data = await this.request<{ user: User; token: string }>(
+      '/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      },
+      'auth-login'
+    );
     this.setToken(data.token);
     return data;
   }
@@ -124,24 +139,32 @@ class ApiClient {
     const payload = typeof input === 'string'
       ? { name: input, email, password }
       : input;
-    const data = await this.request<{ user: User; token: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    const data = await this.request<{ user: User; token: string }>(
+      '/auth/register',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      'auth-register'
+    );
     this.setToken(data.token);
     return data;
   }
 
   public async saveOnboarding(data: any): Promise<User> {
-    const res = await this.request<User>('/auth/onboarding', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+    const res = await this.request<User>(
+      '/auth/onboarding',
+      {
+        method: 'POST',
+        body: JSON.stringify(data)
+      },
+      'auth'
+    );
     return res;
   }
 
   public async getMe(): Promise<User> {
-    return this.request<User>('/auth/me');
+    return this.request<User>('/auth/me', {}, 'auth-session');
   }
 
   public logout() {
@@ -187,24 +210,36 @@ class ApiClient {
   }
 
   public async sendMessage(projectId: string, content: string): Promise<{ userMessage: Message; assistantMessage: Message }> {
-    return this.request<{ userMessage: Message; assistantMessage: Message }>(`/projects/${projectId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ content })
-    });
+    return this.request<{ userMessage: Message; assistantMessage: Message }>(
+      `/projects/${projectId}/messages`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ content })
+      },
+      'ai-chat'
+    );
   }
 
   // Phase 2 AI Planning Intelligence
   public async analyzeIdea(projectId: string, prompt: string): Promise<any> {
-    return this.request(`/projects/${projectId}/analyze-idea`, {
-      method: 'POST',
-      body: JSON.stringify({ prompt })
-    });
+    return this.request(
+      `/projects/${projectId}/analyze-idea`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ prompt })
+      },
+      'ai-planning'
+    );
   }
 
   public async generatePlan(projectId: string): Promise<any> {
-    return this.request(`/projects/${projectId}/generate-plan`, {
-      method: 'POST'
-    });
+    return this.request(
+      `/projects/${projectId}/generate-plan`,
+      {
+        method: 'POST'
+      },
+      'ai-planning'
+    );
   }
 
   // Domain queries

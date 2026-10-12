@@ -77,7 +77,18 @@ export const SignInPage: React.FC<SignInPageProps> = ({
           {error && (
             <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FECACA] flex items-start gap-2.5 text-xs text-[#DC2626] animate-in fade-in duration-150">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="flex-1 leading-relaxed">{error}</div>
+              <div className="flex-1 leading-relaxed">
+                <span>{error}</span>
+                {error.toLowerCase().includes('sign up first') && (
+                  <button
+                    type="button"
+                    onClick={onNavigateSignUp}
+                    className="block mt-1.5 font-bold text-[#2563EB] hover:underline cursor-pointer"
+                  >
+                    Click here to create a new account →
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -92,7 +103,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 placeholder="name@company.com"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
               />
@@ -110,7 +124,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="Enter your password"
                   className="w-full px-3.5 py-2.5 pr-10 rounded-lg border border-[#D1D5DB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-hidden focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all"
                 />

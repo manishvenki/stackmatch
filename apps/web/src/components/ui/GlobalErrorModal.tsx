@@ -70,6 +70,10 @@ export const GlobalErrorModal: React.FC = () => {
           </div>
         );
       case 'AUTH_EXPIRED':
+      case 'AUTH_USER_NOT_FOUND':
+      case 'AUTH_INVALID_PASSWORD':
+      case 'AUTH_INVALID_CREDENTIALS':
+      case 'AUTH_EMAIL_EXISTS':
       case 'UNAUTHORIZED':
         return (
           <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-center text-[#DC2626] shadow-2xs">

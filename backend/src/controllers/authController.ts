@@ -43,7 +43,8 @@ export const register = async (req: Request, res: Response) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        error: 'An account with this email address already exists.'
+        code: 'EMAIL_ALREADY_EXISTS',
+        error: 'An account with this email address already exists. Please sign in instead.'
       });
     }
 
@@ -117,9 +118,10 @@ export const login = async (req: Request, res: Response) => {
 
     const userRecord = await store.findUserByEmail(email);
     if (!userRecord) {
-      return res.status(401).json({
+      return res.status(404).json({
         success: false,
-        error: 'Invalid email or password.'
+        code: 'USER_NOT_FOUND',
+        error: 'No account was found for this email. Please sign up first.'
       });
     }
 
@@ -127,7 +129,8 @@ export const login = async (req: Request, res: Response) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid email or password.'
+        code: 'INVALID_PASSWORD',
+        error: 'Incorrect password. Please verify your credentials and try again.'
       });
     }
 

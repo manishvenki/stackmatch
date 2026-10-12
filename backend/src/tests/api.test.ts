@@ -66,6 +66,40 @@ const runTests = async () => {
     });
     assert(loginRes.status === 200 && loginRes.data?.data?.user?.name === 'Test Founder', 'POST /api/v1/auth/login returns user info');
 
+    // 3a. Login with non-existent email
+    const nonExistentLogin = await request('POST', '/api/v1/auth/login', {
+      email: `unregistered_${Date.now()}@example.com`,
+      password: 'somepassword123'
+    });
+    assert(
+      nonExistentLogin.status === 404 &&
+      nonExistentLogin.data?.code === 'USER_NOT_FOUND' &&
+      nonExistentLogin.data?.error?.includes('No account was found'),
+      'POST /api/v1/auth/login rejects unregistered email with 404 USER_NOT_FOUND'
+    );
+
+    // 3b. Login with incorrect password
+    const wrongPasswordLogin = await request('POST', '/api/v1/auth/login', {
+      email: registerRes.data?.data?.user?.email,
+      password: 'wrongpassword999'
+    });
+    assert(
+      wrongPasswordLogin.status === 401 &&
+      wrongPasswordLogin.data?.code === 'INVALID_PASSWORD' &&
+      wrongPasswordLogin.data?.error?.includes('Incorrect password'),
+      'POST /api/v1/auth/login rejects incorrect password with 401 INVALID_PASSWORD'
+    );
+
+    // 3c. Login with missing credentials
+    const missingCredsLogin = await request('POST', '/api/v1/auth/login', {
+      email: '',
+      password: ''
+    });
+    assert(
+      missingCredsLogin.status === 400,
+      'POST /api/v1/auth/login rejects empty credentials with 400'
+    );
+
     // 4. Protected route /auth/me
     const meRes = await request('GET', '/api/v1/auth/me', undefined, authToken);
     assert(meRes.status === 200 && meRes.data?.data?.email === registerRes.data?.data?.user?.email, 'GET /api/v1/auth/me verifies JWT authorization');

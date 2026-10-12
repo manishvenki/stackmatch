@@ -108,8 +108,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {error && (
-          <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-lg text-xs text-[#DC2626]">
-            {error}
+          <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-lg text-xs text-[#DC2626] space-y-1">
+            <p>{error}</p>
+            {error.toLowerCase().includes('sign up first') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setError(null);
+                }}
+                className="text-[11px] font-bold text-[#2563EB] hover:underline cursor-pointer block"
+              >
+                Switch to Create Account →
+              </button>
+            )}
           </div>
         )}
 
@@ -121,7 +133,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               required
               placeholder="Alex Rivera"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) setError(null);
+              }}
             />
           )}
 
@@ -131,7 +146,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             required
             placeholder="founder@company.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError(null);
+            }}
           />
 
           <Input
@@ -140,7 +158,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             required
             placeholder="••••••••"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (error) setError(null);
+            }}
           />
 
           <div className="pt-2 space-y-2">
