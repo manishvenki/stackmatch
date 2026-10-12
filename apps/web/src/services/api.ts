@@ -21,10 +21,6 @@ const getApiBase = (): string => {
   if (envUrl && envUrl.trim()) {
     return envUrl.trim().replace(/\/+$/, '');
   }
-  // Fallback to production backend on remote Vercel deployments
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return 'https://stackmatch-six.vercel.app/api/v1';
-  }
   return '/api/v1';
 };
 

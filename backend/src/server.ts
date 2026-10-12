@@ -21,8 +21,8 @@ const startServer = async () => {
     console.warn(`[Database] MongoDB Atlas connection notice (${err.message}). Using synchronized persistence engine.`);
   }
 
-  const server = app.listen(config.port, () => {
-    console.log(`[StackMatch Server] Running at http://localhost:${config.port}`);
+  const server = app.listen(config.port, '0.0.0.0', () => {
+    console.log(`[StackMatch Server] Running at http://0.0.0.0:${config.port}`);
     console.log(`[StackMatch Server] Health check: http://localhost:${config.port}/api/v1/health`);
   });
 

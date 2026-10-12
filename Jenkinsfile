@@ -105,6 +105,21 @@ pipeline {
                 }
             }
         }
+
+        stage('Validate Docker Build') {
+            steps {
+                echo 'Validating Docker Compose configuration and container builds...'
+                script {
+                    if (isUnix()) {
+                        sh 'docker compose config'
+                        sh 'docker compose build'
+                    } else {
+                        bat 'docker compose config'
+                        bat 'docker compose build'
+                    }
+                }
+            }
+        }
     }
 
     post {

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/backend/src/server.js",
     "test": "tsx src/tests/api.test.ts && tsx src/tests/errorHandlingAndResources.test.ts"
   },
   "dependencies": {
