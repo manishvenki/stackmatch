@@ -128,8 +128,12 @@ pipeline {
 
         stage('Publish Docker Images') {
             when {
-                branch 'main'
-            }
+    expression {
+        env.GIT_BRANCH == 'origin/main' ||
+        env.BRANCH_NAME == 'main' ||
+        env.GIT_LOCAL_BRANCH == 'main'
+    }
+}
 
             steps {
                 script {
